@@ -40,7 +40,15 @@ interface ToggleFollowAction extends BaseAction {
   };
 }
 
-type AppAction = SendMessageAction|ToggleFollowAction;
+interface AddUserAction extends BaseAction {
+  type: "ADD_USER";
+  payload: {
+    name: string;
+    profile: string;
+  };
+}
+
+type AppAction = SendMessageAction | ToggleFollowAction | AddUserAction;
 type AppState = {
   messages: Message[];
   users: User[];
@@ -157,7 +165,7 @@ const initialState = (): AppState => ({
 // Create the context with a default value that matches the AppContextType
 const Context = React.createContext<AppContextType>({
   state: initialState(),
-  dispatch: () => null /* No-op for default dispatch */,
+  dispatch: () => null 
 });
 const reducer = (state: AppState, action: AppAction): AppState => {
   switch (action.type) {
@@ -175,6 +183,18 @@ const reducer = (state: AppState, action: AppAction): AppState => {
             ? { ...user, following: !user.following }
             : user 
         )
+      };
+    case "ADD_USER":
+      const newUser: User = {
+        uid: `user${Date.now()}`, // Simple unique ID generation
+        name: action.payload.name,
+        profile: action.payload.profile,
+        following: false,
+        loggedTime: 0,
+      };
+      return {
+        ...state,
+        users: [...state.users, newUser],
       };
     default:
       return state; 
@@ -291,14 +311,12 @@ const Chat = ({ conversation }: ChatProps) => {
 
   return (
     <div className="flex flex-col h-[calc(100vh-120px)]  bg-white dark:bg-gray-800 shadow-lg rounded-lg">
-      {/* Chat Header */}
       <div className="p-4 border-b dark:border-gray-700">
         <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
           Chat with {userName}
         </h2>
       </div>
 
-      {/* Messages Area */}
       <div className="flex-grow p-4 space-y-4 overflow-y-auto">
         {messages.map((msg, index) => (
           <div
@@ -320,7 +338,6 @@ const Chat = ({ conversation }: ChatProps) => {
         ))}
       </div>
 
-      {/* Message Input Area */}
       <form
         onSubmit={handleSendMessage}
         className="px-4 py-2 border-t dark:border-gray-700 flex items-center"
@@ -364,6 +381,11 @@ const ChatBox = () => {
     ).sort((a,b) => a.name.localeCompare(b.name));
   }, [state.users, activeChatUsers, state.currentUser]);
 
+  const activateChat=(uid:string)=>{
+    setShowUserSelection(false)
+    setActiveChat(uid)
+  }
+
   const handleStartNewChat = (userId: string) => {
     setActiveChat(userId);
     setShowUserSelection(false);
@@ -374,12 +396,12 @@ const ChatBox = () => {
         <Tabs
           tabs={activeChatUsers}
           activeTabId={activeChat}
-          onTabClick={setActiveChat}
+          onTabClick={activateChat}
           onAddNewChat={() => setShowUserSelection(!showUserSelection)}
         />
       )}
       {showUserSelection && (
-        <div className="p-4 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-750">
+        <div className="p-4 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
           <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 ">Start a new chat with:</h3>
           {availableUsersForNewChat.length > 0 ? (
             <ul className="max-h-40 overflow-y-auto space-y-1">
@@ -396,7 +418,7 @@ const ChatBox = () => {
           )}
         </div>
       )}
-      {activeChat ? (
+      {activeChat && !showUserSelection ? (
         <Chat conversation={activeChat} />
       ) : (
         <div className="text-center text-gray-500 dark:text-gray-400 mt-10">
@@ -433,7 +455,7 @@ const UserCard = ({ user }: { user: User }) => {
             </h3>
             <p className="text-sm text-gray-500 dark:text-gray-400">
               Logged time {Math.floor(user.loggedTime / 60)}:
-              {user.loggedTime % 60}
+              {(user.loggedTime % 60).toString().padStart(2, "0")}
             </p>
             <button 
               onClick={()=>toggleFollow(user.uid)}
@@ -451,9 +473,69 @@ const UserCard = ({ user }: { user: User }) => {
   );
 };
 
+interface AddUserFormProps {
+  onClose: () => void;
+}
+
+const AddUserForm: React.FC<AddUserFormProps> = ({ onClose }) => {
+  const { dispatch } = useContext(Context);
+  const [name, setName] = useState("");
+  const [profileUrl, setProfileUrl] = useState("");
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!name.trim() || !profileUrl.trim()) {
+      alert("Please enter both name and profile image URL.");
+      return;
+    }
+    dispatch({
+      type: "ADD_USER",
+      payload: { name, profile: profileUrl },
+    });
+    setName("");
+    setProfileUrl("");
+    onClose(); // Close the form after submission
+  };
+
+  return (
+    <div className="p-4 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+      <h3 className="text-lg font-medium text-gray-800 dark:text-white mb-3">Add New User</h3>
+      <form onSubmit={handleSubmit} className="space-y-3">
+        <div>
+          <label htmlFor="userName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Name</label>
+          <input
+            type="text"
+            id="userName"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm dark:bg-gray-700 dark:text-white"
+            placeholder="Enter user name"
+          />
+        </div>
+        <div>
+          <label htmlFor="profileUrl" className="block text-sm font-medium text-gray-700 dark:text-gray-300">Profile Image URL</label>
+          <input
+            type="text"
+            id="profileUrl"
+            value={profileUrl}
+            onChange={(e) => setProfileUrl(e.target.value)}
+            className="mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm dark:bg-gray-700 dark:text-white"
+            placeholder="Enter image URL"
+          />
+        </div>
+        <div className="flex justify-end space-x-2">
+          <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-md hover:bg-gray-50 dark:hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">Cancel</button>
+          <button type="submit" className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">Add User</button>
+        </div>
+      </form>
+    </div>
+  );
+};
+
 const UsersBox = () => {
   const { state } = useContext(Context);
   const totalTime=useMemo(()=>state.users.reduce((acc,user)=>acc+user.loggedTime,0),[state.users])
+  const [showAddUserForm, setShowAddUserForm] = useState(false);
 
   if (!state.users || state.users.length === 0) {
     return (
@@ -465,7 +547,6 @@ const UsersBox = () => {
 
   return (
     <div className="flex flex-col bg-white dark:bg-gray-800 shadow-lg rounded-lg max-h-[calc(100vh-6rem)] overflow-hidden">
-      {/* Fixed Header Section */}
       <div className="p-4 border-b dark:border-gray-700">
         <h2 className="text-xl font-semibold text-gray-800 dark:text-white text-center sm:text-left">
           All Users
@@ -473,8 +554,15 @@ const UsersBox = () => {
         <h4 className="text-sm text-gray-600 dark:text-gray-400 text-center sm:text-left mt-1">
           Total allocated time: {Math.floor(totalTime/60)}h {totalTime%60}m
         </h4>
+        <button
+          onClick={() => setShowAddUserForm(!showAddUserForm)}
+          className="mt-3 w-full sm:w-auto px-4 py-2 text-sm font-medium text-white bg-green-500 hover:bg-green-600 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-800 focus:ring-green-400"
+        >
+          {showAddUserForm ? 'Cancel Adding User' : 'Add New User'}
+        </button>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 overflow-y-auto">
+      {showAddUserForm && <AddUserForm onClose={() => setShowAddUserForm(false)} />}
+      <div className={`grid grid-cols-1 sm:grid-cols-2 gap-4 overflow-y-auto ${showAddUserForm ? 'pt-2' : 'pt-4'} px-4 pb-4`}>
         {state.users.map((user) => ( user.uid==state.currentUser ? null :
           <UserCard key={user.uid} user={user} />
         ))}
@@ -490,13 +578,10 @@ export default function App() {
     <Context.Provider value={{ state, dispatch }}>
       <div>
         <Navbar />
-        {/* Main content area: stacks vertically on small screens, row on large screens (lg breakpoint) */}
         <div className="flex flex-col lg:flex-row justify-center gap-6 p-3">
-          {/* UsersBox container: full width on small, fixed width on large, doesn't shrink */}
           <div className="w-full lg:w-[384px] xl:w-[448px] lg:flex-shrink-0">
             <UsersBox />
           </div>
-          {/* ChatBox container: full width on small, takes remaining space on large, with a max width, min-w-0 for flex safety */}
           <div className="w-full lg:flex-1 lg:max-w-3xl min-w-0">
             <ChatBox />
           </div>
@@ -505,3 +590,4 @@ export default function App() {
     </Context.Provider>
   );
 }
+
