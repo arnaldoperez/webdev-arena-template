@@ -33,7 +33,14 @@ interface SendMessageAction extends BaseAction {
   };
 }
 
-type AppAction = SendMessageAction;
+interface ToggleFollowAction extends BaseAction {
+  type: "TOGGLE_FOLLOW";
+  payload: {
+    uid: string;
+  };
+}
+
+type AppAction = SendMessageAction|ToggleFollowAction;
 type AppState = {
   messages: Message[];
   users: User[];
@@ -58,6 +65,17 @@ const initialState = (): AppState => ({
     { from: "user2", to: "user1", message: "I am fine, thank you" },
     { from: "user3", to: "user1", message: "Nice to meet you" },
     { from: "user1", to: "user3", message: "Nice to meet you too" },
+    { from: "user2", to: "user1", message: "I have a question" },
+    { from: "user1", to: "user2", message: "Yes?" },
+    { from: "user2", to: "user1", message: "Can we meet tomorrow?" },
+    { from: "user1", to: "user2", message: "Sure, what time?" },
+    { from: "user2", to: "user1", message: "How about 2 PM?" },
+    { from: "user1", to: "user2", message: "Sounds good!" },
+    { from: "user3", to: "user1", message: "Are you available?" },
+    { from: "user1", to: "user3", message: "Yes, I am" },
+    { from: "user3", to: "user1", message: "I need your help" },
+    { from: "user1", to: "user3", message: "Okay, tell me what you need" },
+
   ],
   users: [
     {
@@ -81,6 +99,56 @@ const initialState = (): AppState => ({
       following: true,
       loggedTime: 100,
     },
+    {
+      uid: "user4",
+      name: "User 4",
+      profile: "https://randomuser.me/api/portraits/women/71.jpg",
+      following: false,
+      loggedTime: 60,
+    },
+    {
+      uid: "user5",
+      name: "User 5",
+      profile: "https://randomuser.me/api/portraits/men/70.jpg",
+      following: true,
+      loggedTime: 45,
+    },
+    {
+      uid: "user6",
+      name: "User 6",
+      profile: "https://randomuser.me/api/portraits/men/69.jpg",
+      following: false,
+      loggedTime: 75,
+    },
+    {
+      uid: "user7",
+      name: "User 7",
+      profile: "https://randomuser.me/api/portraits/men/68.jpg",
+      following: true,
+      loggedTime: 90,
+    },
+    {
+      uid: "user8",
+      name: "User 8",
+      profile: "https://randomuser.me/api/portraits/women/67.jpg",
+      following: false,
+      loggedTime: 55,
+    },
+    {
+      uid: "user9",
+      name: "User 9",
+      profile: "https://randomuser.me/api/portraits/women/66.jpg",
+      following: true,
+      loggedTime: 110,
+    },
+    {
+      uid: "user10",
+      name: "User 10",
+      profile: "https://randomuser.me/api/portraits/men/65.jpg",
+      following: false,
+      loggedTime: 65,
+    }
+
   ],
   openChat: null,
   currentUser: "user1",
@@ -99,20 +167,43 @@ const reducer = (state: AppState, action: AppAction): AppState => {
         // Add the new message to the existing messages array
         messages: [...state.messages, action.payload],
       };
+    case "TOGGLE_FOLLOW":
+      return {
+        ...state,
+        users: state.users.map(user => 
+          user.uid === action.payload.uid 
+            ? { ...user, following: !user.following }
+            : user 
+        )
+      };
     default:
-      return state; // Return the state directly
+      return state; 
   }
 };
 
 const Navbar = () => {
+  const { state } = useContext(Context);
+  const currentUser = state.users.find(user => user.uid === state.currentUser);
+
   return (
     <nav className="bg-white dark:bg-gray-800 shadow-md py-4">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between">
-          <div className="text-xl font-bold text-gray-800 dark:text-white">
+          <div className="text-xl font-bold text-blue-600 dark:text-blue-400">
             Netic
           </div>
-          <div>{/* Add navigation links or other elements here */}</div>
+          {currentUser && (
+            <div className="flex items-center space-x-2">
+              <img
+                src={currentUser.profile}
+                alt={currentUser.name}
+                className="w-8 h-8 rounded-full"
+              />
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                {currentUser.name}
+              </span>
+            </div>
+          )}
         </div>
       </div>
     </nav>
@@ -129,17 +220,18 @@ interface TabsProps {
   tabs: TabItem[];
   activeTabId: string | null;
   onTabClick: (uid: string) => void;
+  onAddNewChat: () => void;
 }
 
-const Tabs: React.FC<TabsProps> = ({ tabs, activeTabId, onTabClick }) => {
+const Tabs: React.FC<TabsProps> = ({ tabs, activeTabId, onTabClick, onAddNewChat }) => {
   return (
-    <div className="border-b border-gray-200 dark:border-gray-700 mb-4">
+    <div> 
       <nav className="-mb-px flex space-x-4" aria-label="Tabs">
         {tabs.map((tab) => (
           <button
             key={tab.uid}
             onClick={() => onTabClick(tab.uid)}
-            className={`whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm focus:outline-none ${
+            className={`whitespace-nowrap px-1 border-b-2 font-medium text-sm focus:outline-none ${
               activeTabId === tab.uid
                 ? "border-blue-500 text-blue-600 dark:text-blue-400"
                 : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:border-gray-600"
@@ -148,10 +240,20 @@ const Tabs: React.FC<TabsProps> = ({ tabs, activeTabId, onTabClick }) => {
             {tab.name}
           </button>
         ))}
+        <button
+          onClick={onAddNewChat}
+          className="ml-2 p-2 text-gray-500 hover:text-blue-500 dark:text-gray-400 dark:hover:text-blue-400 focus:outline-none"
+          aria-label="Start new chat"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+        </button>
       </nav>
     </div>
   );
 };
+
 interface ChatProps {
   conversation: string;
 }
@@ -221,7 +323,7 @@ const Chat = ({ conversation }: ChatProps) => {
       {/* Message Input Area */}
       <form
         onSubmit={handleSendMessage}
-        className="p-4 border-t dark:border-gray-700 flex items-center"
+        className="px-4 py-2 border-t dark:border-gray-700 flex items-center"
       >
         <input
           type="text"
@@ -242,8 +344,9 @@ const Chat = ({ conversation }: ChatProps) => {
 };
 
 const ChatBox = () => {
-  const [state] = useReducer(reducer, undefined, initialState); // Pass initializer function as the third argument
-  const [activeChat, setActiveChat] = useState<string>("");
+  const { state } = useContext(Context); // Use shared context
+  const [activeChat, setActiveChat] = useState<string | null>(null);
+  const [showUserSelection, setShowUserSelection] = useState<boolean>(false);
   const activeChatUsers = useMemo(() => {
     const activeChats = state.messages
       .filter((message) => message.from === state.currentUser)
@@ -254,47 +357,131 @@ const ChatBox = () => {
       }, []);
     return state.users.filter((user) => activeChats.includes(user.uid));
   }, [state.messages, state.users, state.currentUser]);
+  const availableUsersForNewChat = useMemo(() => {
+    const activeChatUserIds = new Set(activeChatUsers.map(u => u.uid));
+    return state.users.filter(
+      user => user.uid !== state.currentUser && !activeChatUserIds.has(user.uid)
+    ).sort((a,b) => a.name.localeCompare(b.name));
+  }, [state.users, activeChatUsers, state.currentUser]);
+
+  const handleStartNewChat = (userId: string) => {
+    setActiveChat(userId);
+    setShowUserSelection(false);
+  };
   return (
-    <main className="container mx-auto px-4 py-4 w-sm">
+    <main className="container mx-auto px-4 w-sm">
       {activeChatUsers.length > 0 && (
         <Tabs
           tabs={activeChatUsers}
           activeTabId={activeChat}
           onTabClick={setActiveChat}
+          onAddNewChat={() => setShowUserSelection(!showUserSelection)}
         />
       )}
-      {activeChat ? <Chat conversation={activeChat} /> : 
+      {showUserSelection && (
+        <div className="p-4 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-750">
+          <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 ">Start a new chat with:</h3>
+          {availableUsersForNewChat.length > 0 ? (
+            <ul className="max-h-40 overflow-y-auto space-y-1">
+              {availableUsersForNewChat.map(user => (
+                <li key={user.uid}>
+                  <button onClick={() => handleStartNewChat(user.uid)} className="w-full text-left px-3 py-1.5 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-md focus:outline-none">
+                    {user.name}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-xs text-gray-500 dark:text-gray-400">No new users to chat with.</p>
+          )}
+        </div>
+      )}
+      {activeChat ? (
+        <Chat conversation={activeChat} />
+      ) : (
         <div className="text-center text-gray-500 dark:text-gray-400 mt-10">
           Select a user to start a chat.
         </div>
-      }
+      )}
     </main>
   );
 };
 
 const UserCard = ({ user }: { user: User }) => {
-  const { state, dispatch } = useContext(Context);
-  return <div>
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-5">
-      <div className="flex items-center space-x-4">
-        <img
-          src={user.profile}
-          alt={user.name}
-          className="w-12 h-12 rounded-full"
-        />
-        <div>
-          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
-            {user.name}
-          </h3>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            Logged time {Math.floor(user.loggedTime/60)}:{user.loggedTime%60}
-          </p>
+  const { dispatch } = useContext(Context);
+  const toggleFollow=(uid:string)=>{
+    console.log(uid)
+    dispatch({
+      type: "TOGGLE_FOLLOW",
+      payload: {
+        uid,
+      },
+    });
+  }
+  return (
+    <div>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-5">
+        <div className="flex items-center space-x-4">
+          <img
+            src={user.profile}
+            alt={user.name}
+            className="w-12 h-12 rounded-full"
+          />
+          <div>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+              {user.name}
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Logged time {Math.floor(user.loggedTime / 60)}:
+              {user.loggedTime % 60}
+            </p>
+            <button 
+              onClick={()=>toggleFollow(user.uid)}
+              className={`mt-2 px-3 py-1 text-xs font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-800 ${
+                user.following 
+                  ? "bg-red-500 hover:bg-red-600 text-white focus:ring-red-400" 
+                  : "bg-blue-500 hover:bg-blue-600 text-white focus:ring-blue-400"
+              }`}
+            >
+              {user.following ? "Unfollow" : "Follow"}</button>
+          </div>
         </div>
       </div>
     </div>
+  );
+};
 
-  </div>
-}
+const UsersBox = () => {
+  const { state } = useContext(Context);
+  const totalTime=useMemo(()=>state.users.reduce((acc,user)=>acc+user.loggedTime,0),[state.users])
+
+  if (!state.users || state.users.length === 0) {
+    return (
+      <div className="p-4 text-center text-gray-500 dark:text-gray-400">
+        No users available.
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col bg-white dark:bg-gray-800 shadow-lg rounded-lg max-h-[calc(100vh-6rem)] overflow-hidden">
+      {/* Fixed Header Section */}
+      <div className="p-4 border-b dark:border-gray-700">
+        <h2 className="text-xl font-semibold text-gray-800 dark:text-white text-center sm:text-left">
+          All Users
+        </h2>
+        <h4 className="text-sm text-gray-600 dark:text-gray-400 text-center sm:text-left mt-1">
+          Total allocated time: {Math.floor(totalTime/60)}h {totalTime%60}m
+        </h4>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 overflow-y-auto">
+        {state.users.map((user) => ( user.uid==state.currentUser ? null :
+          <UserCard key={user.uid} user={user} />
+        ))}
+      </div>
+    </div>
+  );
+};
 
 export default function App() {
   const [state, dispatch] = useReducer(reducer, undefined, initialState); // Pass initializer function as the third argument
@@ -303,11 +490,16 @@ export default function App() {
     <Context.Provider value={{ state, dispatch }}>
       <div>
         <Navbar />
-        <div class="flex justify-content-center flex-row flex-wrap">
-          <div class="max-w-2xl">
-            {state.users.map((user,key)=><UserCard key={key} user={user} />)}
+        {/* Main content area: stacks vertically on small screens, row on large screens (lg breakpoint) */}
+        <div className="flex flex-col lg:flex-row justify-center gap-6 p-3">
+          {/* UsersBox container: full width on small, fixed width on large, doesn't shrink */}
+          <div className="w-full lg:w-[384px] xl:w-[448px] lg:flex-shrink-0">
+            <UsersBox />
           </div>
-          <ChatBox />
+          {/* ChatBox container: full width on small, takes remaining space on large, with a max width, min-w-0 for flex safety */}
+          <div className="w-full lg:flex-1 lg:max-w-3xl min-w-0">
+            <ChatBox />
+          </div>
         </div>
       </div>
     </Context.Provider>
