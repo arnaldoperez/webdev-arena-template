@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   LineChart,
   Line,
@@ -7,6 +7,8 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  Bar,
+  BarChart,
 } from "recharts";
 import {
   Droplets,
@@ -15,16 +17,17 @@ import {
   Flame,
   Battery,
   TrendingUp,
-  BarChart2,
   Activity,
+  BarChart as BarCharIcon,
   Info,
   Moon,
   Sun,
+  FootprintsIcon,
+  Clock,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Inter } from "next/font/google";
-import { CategoricalChartFunc } from "recharts/types/chart/generateCategoricalChart";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -75,11 +78,11 @@ const tutorialSlides = [
   },
 ];
 
-interface ChartEntry{
+interface ChartEntry {
   day: string;
   steps: number;
 }
-const chartData:ChartEntry[] = [
+const chartData: ChartEntry[] = [
   { day: "Mon", steps: 12000 },
   { day: "Tue", steps: 15000 },
   { day: "Wed", steps: 8000 },
@@ -121,59 +124,57 @@ const instructionsData = [
   },
 ];
 
-const StatCard = ({ title, value, icon: Icon, color, trendUp }:{title:string,value:string,icon:LucideIcon,color:string,trend:string,trendUp:boolean}) => (
+const instructions=[
+  {title:"Power Indicators", category:"Guide"},
+  {title:"Wheatehr Forecast", category:"Tutorial"},
+  {title:"High Performance", category:"Support"},
+]
+
+const StatCard = ({
+  title,
+  value,
+  unit,
+  icon: Icon,
+  fullHeight=false
+}: {
+  title: string;
+  value: string;
+  icon: LucideIcon;
+  unit: string;
+  fullHeight?: boolean;
+}) => (
   <motion.div
-    className="bg-white/90 dark:bg-zinc-800/90 backdrop-blur-lg rounded-2xl p-4 flex items-start space-x-4 relative overflow-hidden group transition-all duration-300 hover:shadow-lg"
+    className={`${fullHeight?"h-full mb-2":""} bg-white/90 dark:bg-zinc-800/90 backdrop-blur-lg rounded-2xl m-2 p-3 flex items-start space-x-4 flex justify-between overflow-hidden group transition-all duration-300 hover:shadow-lg`}
     whileHover={{ y: -2 }}
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.3 }}
   >
-    <div
-      className="p-3 rounded-lg transition-all duration-300 group-hover:scale-110"
-      style={{ backgroundColor: `${color}20`, color }}
-    >
-      <Icon className="w-6 h-6" />
-    </div>
-    <div>
+    <div className="flex-grow">
       <p className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
         {title}
       </p>
-      <p className="text-2xl  text-gray-700 dark:text-gray-200 font-bold transition-all duration-300 group-hover:scale-105">
+      <p className="text-4xl  text-gray-700 dark:text-gray-200 font-bold transition-all duration-300 group-hover:scale-105">
         {value}
+        <span className="ml-1 text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+          {unit}
+        </span>
       </p>
     </div>
-    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-      <TrendingUp
-        className={`w-5 h-5 ${
-          trendUp ? "text-emerald-500" : "text-red-500 rotate-180"
-        }`}
-      />
+
+    <div className="p-3 rounded-lg bg-gray-100 dark:bg-zinc-700">
+      <Icon className="w-8 h-8 lucide-gradient-stroke" />
     </div>
-    <motion.div
-      className="absolute bottom-0 left-0 h-1 w-full bg-gray-100 dark:bg-gray-700"
-      initial={{ scaleX: 0 }}
-      animate={{ scaleX: 1 }}
-      transition={{ duration: 0.5, delay: 0.2 }}
-    >
-      <motion.div
-        className="h-full"
-        style={{
-          background: `linear-gradient(90deg, ${color}, ${color}80)`,
-          width: `${Math.min(
-            100,
-            Math.max(20, parseInt(value.replace(/[^0-9]/g, "")))
-          )}%`,
-        }}
-        initial={{ width: 0 }}
-        animate={{ width: "100%" }}
-        transition={{ duration: 1.5, ease: "easeOut" }}
-      />
-    </motion.div>
   </motion.div>
 );
 
-const MiniChart = ({ data, color }:{data:Array<{value:number}>,color:string}) => (
+const MiniChart = ({
+  data,
+  color,
+}: {
+  data: Array<{ value: number }>;
+  color: string;
+}) => (
   <div className="w-24 h-12">
     <ResponsiveContainer width="100%" height="100%">
       <LineChart data={data}>
@@ -189,164 +190,86 @@ const MiniChart = ({ data, color }:{data:Array<{value:number}>,color:string}) =>
   </div>
 );
 
-const ActivityChart = ({ data, selectedRange, onRangeChange }:{data:ChartEntry[],selectedRange:string,onRangeChange:(range:string) => void}) => {
-  const [activeDay, setActiveDay] = useState<string|null>(null);
-
-  const handleMouseOver:CategoricalChartFunc  = (e) => {
-    if (e && e.activeLabel) {
-      setActiveDay(e.activeLabel);
-    }
-  };
-
-  const handleMouseLeave = () => {
-    setActiveDay(null);
-  };
-
+const ActivityChart = ({
+  data,
+  selectedRange,
+}: {
+  data: ChartEntry[];
+  selectedRange: string;
+  onRangeChange: (range: string) => void;
+}) => {
   const filteredData = data.slice(0, selectedRange === "week" ? 7 : 30);
 
   return (
     <motion.div
-      className="bg-white/90 dark:bg-zinc-800/90 backdrop-blur-lg rounded-2xl p-6 transition-all duration-300 hover:shadow-lg"
+      className="bg-white/90 dark:bg-zinc-800/90 backdrop-blur-lg rounded-2xl p-4 transition-all duration-300 hover:shadow-lg"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-bold text-zinc-900 dark:text-white">
-          Activity Trends
-        </h2>
-        <div className="flex space-x-2">
-          <motion.button
-            className={`px-3 py-1 rounded-lg text-sm font-medium transition-all duration-200 ${
-              selectedRange === "week"
-                ? "bg-lime-500 text-white shadow-lg"
-                : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
-            }`}
-            onClick={() => onRangeChange("week")}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            This Week
-          </motion.button>
-          <motion.button
-            className={`px-3 py-1 rounded-lg text-sm font-medium transition-all duration-200 ${
-              selectedRange === "month"
-                ? "bg-blue-500 text-white shadow-lg"
-                : "bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
-            }`}
-            onClick={() => onRangeChange("month")}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            This Month
-          </motion.button>
-        </div>
-      </div>
-      <div className="h-64">
+      <div className="h-32">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart
             data={filteredData}
             margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
-            onMouseMove={handleMouseOver}
-            onMouseLeave={handleMouseLeave}
           >
             <defs>
               <linearGradient id="colorSteps" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#84cc16" stopOpacity={0.3} />
-                <stop offset="95%" stopColor="#84cc16" stopOpacity={0.1} />
+                <stop offset="5%" stopColor="#bef264" stopOpacity={0.8} />
+                <stop offset="95%" stopColor="#67e8f9" stopOpacity={0.8} />
               </linearGradient>
             </defs>
-            <CartesianGrid
-              strokeDasharray="3 3"
-              vertical={false}
-              stroke="#84cc16"
-              strokeOpacity={0.6}
-            />
-            <XAxis
-              dataKey="day"
-              axisLine={false}
-              tickLine={false}
-              tick={{ fill: "#9CA3AF", fontSize: 12 }}
-              dy={10}
-            />
-            <YAxis
-              axisLine={false}
-              tickLine={false}
-              tick={{ fill: "#9CA3AF", fontSize: 12 }}
-              dx={-10}
-              tickFormatter={(value) =>
-                `${value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`
-              }
-            />
-            <Tooltip
-              content={({ active, payload }) => {
-                if (active && payload && payload.length) {
-                  const data = payload[0].payload;
-                  return (
-                    <motion.div
-                      className="bg-white dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700 rounded-lg p-4 shadow-lg backdrop-blur-sm"
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      style={{
-                        boxShadow:
-                          "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
-                      }}
-                    >
-                      <p
-                        className="font-bold text-zinc-900 dark:text-white"
-                        style={{ color: chartConfig.steps.color }}
-                      >
-                        {data.day} Activity
-                      </p>
-                      <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-                        {data.steps
-                          .toString()
-                          .replace(/\B(?=(\d{3})+(?!\d))/g, ",")}{" "}
-                        Steps
-                      </p>
-                    </motion.div>
-                  );
-                }
-                return null;
-              }}
-              cursor={{ stroke: "#84cc16", strokeDasharray: "3 3" }}
-              wrapperStyle={{ outline: "none" }}
-            />
             <Line
               type="monotone"
               dataKey="steps"
               stroke={chartConfig.steps.color}
+              fill="url(#colorSteps)"
               strokeWidth={3}
-              dot={{ stroke: chartConfig.steps.color, strokeWidth: 2, r: 4 }}
-              activeDot={{
-                r: 6,
-                stroke: chartConfig.steps.color,
-                strokeWidth: 2,
-                fill: "#fff",
-              }}
               name="Steps"
             />
           </LineChart>
         </ResponsiveContainer>
       </div>
-      <div className="flex justify-center mt-4">
-        <div className="flex space-x-2">
-          {filteredData.map((entry, index) => (
-            <motion.button
-              key={index}
-              className={`w-2 h-2 rounded-full transition-all duration-300 focus:outline-none ${
-                activeDay === entry.day
-                  ? "bg-blue-500 scale-150 ring-2 ring-blue-200"
-                  : "bg-gray-200 dark:bg-gray-700"
-              }`}
-              onClick={() => setActiveDay(entry.day)}
-              whileHover={{ scale: 1.5 }}
-              whileTap={{ scale: 0.8 }}
-              aria-label={`View ${entry.day} activity`}
-            />
-          ))}
-        </div>
+      <div className="flex-grow">
+      <p className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+        Heat Rate
+      </p>
+      <p className="text-4xl  text-gray-700 dark:text-gray-200 font-bold transition-all duration-300 group-hover:scale-105">
+        74
+        <span className="ml-1 text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+          bpm
+        </span>
+      </p>
+    </div>
+    </motion.div>
+  );
+};
+
+const DistanceCounter = ({
+}) => {
+  return (
+    <motion.div
+      className="bg-white/90 dark:bg-zinc-800/90 backdrop-blur-lg rounded-2xl p-4 transition-all duration-300 hover:shadow-lg"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
+      <div className="h-32">
+        <ResponsiveContainer width="100%" height="100%">
+          <Footprints />
+        </ResponsiveContainer>
       </div>
+      <div className="flex-grow">
+      <p className="text-4xl  text-gray-700 dark:text-gray-200 font-bold transition-all duration-300 group-hover:scale-105">
+        2.9k
+        <span className="ml-1 text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+          steps
+        </span>
+      <p className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+        Distance: 2.2 mi
+      </p>
+      </p>
+    </div>
     </motion.div>
   );
 };
@@ -670,35 +593,29 @@ const TutorialScreen = ({ onComplete }: { onComplete: () => void }) => {
 const BatteryIndicator = ({ value }: { value: number }) => {
   return (
     <motion.div
-      className="bg-gray-200 dark:bg-gray-700 rounded-lg p-2 flex items-center space-x-2 relative overflow-hidden group transition-all duration-300 hover:shadow-md w-40 h-12" // Adjusted padding, size and background
+      className="flex flex-col w-24 m-1 items-center bg-white/90 dark:bg-zinc-800/90 rounded-lg p-2 text-center group transition-all duration-200 hover:shadow-lg"
       whileHover={{ y: -2 }}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
     >
-      {/* Progress bar background */}
+      <p className="text-lg text-gray-500 font-semibold dark:text-gray-100 drop-shadow-sm">
+        {value}%
+      </p>
+      <p className="text-xs text-gray-500 dark:text-gray-200 drop-shadow-sm">
+        Battery
+      </p>
+
       <motion.div
-        className="absolute top-0 left-0 h-full bg-emerald-500 rounded-lg" // Green progress
-        initial={{ width: 0 }}
-        animate={{ width: `${value}%` }}
-        transition={{ duration: 1, ease: "easeInOut" }}
-      />
-      {/* Content on top of progress bar */}
-      <div className="relative z-10 flex items-center w-full">
-        {" "}
-        {/* Ensure content is above progress */}
-        <div
-          className="p-1 rounded-md transition-all duration-300 group-hover:scale-110 bg-white/20 dark:bg-black/20" // Icon background
-        >
-          <Battery size={20} className="text-white dark:text-gray-200" />{" "}
-          {/* Icon color */}
-        </div>
-        <div className="ml-2">
-          <span className="text-sm font-semibold text-white dark:text-gray-100 drop-shadow-sm">
-            Battery: {value}%
-          </span>
-        </div>
-      </div>
+        className="w-10 h-32 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-end relative overflow-hidden group transition-all duration-300 hover:shadow-md"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        <motion.div
+          className="absolute left-0 w-full bg-zinc-500 rounded-lg" // Green progress
+          initial={{ height: 0 }}
+          animate={{ height: `${value}%` }}
+          transition={{ duration: 1, ease: "easeInOut" }}
+        />
+      </motion.div>
     </motion.div>
   );
 };
@@ -747,41 +664,35 @@ const NavBar = ({
   );
 };
 
+const Instruction=({title, category, picture}:{title:string,category:string, picture:string})=>{
+  return (<div style={{backgroundImage:picture}} className="flex flex-col p-4 bg-zinc-50 dark:bg-zinc-900/20 rounded-xl transition-all duration-300 hover:bg-zinc-100 dark:hover:bg-zinc-900/30 hover:scale-105">
+            <h3 className="text-sm font-medium text-lime-500 dark:text-lime-400 uppercase tracking-wider">
+              {title}
+            </h3>
+            <p className="text-3xl font-bold text-zinc-900 dark:text-white mt-2">
+              {category}
+            </p>
+          </div>)
+}
+
 const Stats = () => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
       <StatCard
         title="Water Intake"
-        value="1.5L"
+        value="1.5"
+        unit="litres"
         icon={Droplets}
-        color="#3B82F6"
-        trend="+12%"
-        trendUp={true}
+        fullHeight={true}
       />
       <StatCard
         title="Step Count"
         value="8,945"
+        unit="steps"
         icon={Footprints}
-        color="#10B981"
-        trend="+18%"
-        trendUp={true}
       />
-      <StatCard
-        title="Heart Rate"
-        value="72 bpm"
-        icon={Heart}
-        color="#F59E0B"
-        trend="-5%"
-        trendUp={false}
-      />
-      <StatCard
-        title="Calories Burned"
-        value="420 kcal"
-        icon={Flame}
-        color="#EF4444"
-        trend="+10%"
-        trendUp={true}
-      />
+      <StatCard title="Heart Rate" value="72" unit="/min" icon={Heart} />
+      <StatCard title="Calories Burned" value="420" unit="kcal" icon={Flame} />
     </div>
   );
 };
@@ -789,83 +700,37 @@ const Stats = () => {
 const ActivityResume = () => {
   const [selectedRange, setSelectedRange] = useState("week");
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-      <ActivityChart
-        data={chartData}
-        selectedRange={selectedRange}
-        onRangeChange={setSelectedRange}
-      />
-      <div className="bg-white/90 dark:bg-zinc-800/90 backdrop-blur-lg rounded-2xl p-6 transition-all duration-300 hover:shadow-lg lg:col-span-2">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-2 grid-rows-3">
+        <StatCard
+          icon={Droplets}
+          title="Water"
+          value="1.5"
+          unit="litres"
+        ></StatCard>
+        <div className="row-span-2">
+         <DistanceCounter />
+        </div>
+        <div className="row-span-2">
+          <ActivityChart
+            data={chartData}
+            selectedRange={selectedRange}
+            onRangeChange={setSelectedRange}
+          />
+        </div>
+        <StatCard
+          icon={Flame}
+          title="Calories"
+          value="3.2K"
+          unit="cal"
+        ></StatCard>
+      </div>
+      <div className="bg-white/90 dark:bg-zinc-800/90 backdrop-blur-lg rounded-2xl p-6 transition-all duration-300 hover:shadow-lg">
         <h2 className="text-xl font-bold text-zinc-900 dark:text-white mb-4">
-          Weekly Highlights
+          How it works
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="flex flex-col p-4 bg-zinc-50 dark:bg-zinc-900/20 rounded-xl transition-all duration-300 hover:bg-zinc-100 dark:hover:bg-zinc-900/30 hover:scale-105">
-            <h3 className="text-sm font-medium text-lime-500 dark:text-lime-400 uppercase tracking-wider">
-              Distance Covered
-            </h3>
-            <p className="text-3xl font-bold text-zinc-900 dark:text-white mt-2">
-              5.2 <span className="text-xl">km</span>
-            </p>
-            <div className="mt-2 text-sm text-lime-500 dark:text-lime-400 flex items-center">
-              <TrendingUp className="w-4 h-4 mr-1" /> +8% from last week
-            </div>
-            <div className="mt-3">
-              <MiniChart
-                data={[
-                  { value: 4.2 },
-                  { value: 5.5 },
-                  { value: 4.8 },
-                  { value: 5.2 },
-                ]}
-                color="#3B82F6"
-              />
-            </div>
-          </div>
-          <div className="flex flex-col p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl transition-all duration-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 hover:scale-105">
-            <h3 className="text-sm font-medium text-emerald-500 dark:text-emerald-400 uppercase tracking-wider">
-              Active Time
-            </h3>
-            <p className="text-3xl font-bold text-zinc-900 dark:text-white mt-2">
-              2h 45m
-            </p>
-            <div className="mt-2 text-sm text-emerald-500 dark:text-emerald-400 flex items-center">
-              <TrendingUp className="w-4 h-4 mr-1" /> +15% from last week
-            </div>
-            <div className="mt-3">
-              <MiniChart
-                data={[
-                  { value: 120 },
-                  { value: 165 },
-                  { value: 135 },
-                  { value: 150 },
-                ]}
-                color="#10B981"
-              />
-            </div>
-          </div>
-          <div className="flex flex-col p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl transition-all duration-300 hover:bg-amber-100 dark:hover:bg-amber-900/30 hover:scale-105">
-            <h3 className="text-sm font-medium text-amber-500 dark:text-amber-400 uppercase tracking-wider">
-              Battery Life
-            </h3>
-            <p className="text-3xl font-bold text-zinc-900 dark:text-white mt-2">
-              85%
-            </p>
-            <div className="mt-2 text-sm text-amber-500 dark:text-amber-400 flex items-center">
-              <TrendingUp className="w-4 h-4 mr-1" /> +5% from last charge
-            </div>
-            <div className="mt-3">
-              <MiniChart
-                data={[
-                  { value: 75 },
-                  { value: 80 },
-                  { value: 78 },
-                  { value: 85 },
-                ]}
-                color="#F59E0B"
-              />
-            </div>
-          </div>
+        <div className="grid grid-rows-1 grid-cols-2 overflow-x-auto md:grid-cols-3 gap-6">
+        {instructions.map((instruction, index )=>(<Instruction key={index} title={instruction.title} category={instruction.category} picture={`https://picsum.photos/seed/${index.toString()}/300/200`}  />))}          
         </div>
       </div>
     </div>
@@ -906,20 +771,143 @@ const Instructions = () => {
   );
 };
 
+const StepsBarChart = ({ data }: { data: ChartEntry[] }) => {
+  const totalSteps = useMemo(() => {
+    return data.reduce((current, day) => day.steps + current, 0);
+  }, []);
+  return (
+    <div>
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="mb-2 text-7x1 font-bold text-zinc-900 dark:text-white">
+            My Activity
+          </h2>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">
+            Total Steps
+          </p>
+          <h2 className="mb-2 text-7x1 font-bold text-zinc-900 dark:text-white">
+            {totalSteps}
+          </h2>
+        </div>
+        <motion.select className="h-10 p-2 rounded-full border-2 text-zinc-500 border-zinc-100 border-zinc-800 bg-zinc-200 dark:text-zinc-200 dark:border-zinc-500 dark:bg-zinc-900 dark:bg-zinc-800">
+          <option value="week">This week</option>
+          <option value="month">This month</option>
+        </motion.select>
+      </div>
+      <motion.div
+        className="bg-white/90 h-96 dark:bg-zinc-800/90 backdrop-blur-lg rounded-2xl p-6 transition-all duration-300 hover:shadow-lg border-2 border-zinc-100 dark:border-zinc-700" // Removed h-full, flex, flex-col
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+            data={data}
+            margin={{ top: 5, right: 10, left: -20, bottom: 5 }}
+          >
+            <defs>
+              <linearGradient id="stepsBarGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#bef264" stopOpacity={0.8} />
+                <stop offset="95%" stopColor="#67e8f9" stopOpacity={0.8} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid
+              strokeDasharray="3 3"
+              vertical={false}
+              strokeOpacity={0.2}
+              stroke={chartConfig.steps.color}
+            />
+            <XAxis
+              dataKey="day"
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: "#9CA3AF", fontSize: 12 }}
+              dy={10}
+            />
+            <YAxis
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: "#9CA3AF", fontSize: 12 }}
+              dx={-10}
+              tickFormatter={(value) =>
+                value >= 1000 ? `${value / 1000}k` : value.toString()
+              }
+            />
+            <Tooltip
+              content={({ active, payload, label }) => {
+                if (active && payload && payload.length) {
+                  return (
+                    <motion.div
+                      className="bg-white dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700 rounded-lg p-3 shadow-lg backdrop-blur-sm"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                    >
+                      <p
+                        className="font-bold text-zinc-900 dark:text-white"
+                        style={{ color: chartConfig.steps.color }}
+                      >
+                        {label}
+                      </p>
+                      <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+                        Steps:{" "}
+                        {payload[0].value
+                          ?.toString()
+                          .replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+                      </p>
+                    </motion.div>
+                  );
+                }
+                return null;
+              }}
+              cursor={{ fill: "rgba(132, 204, 2, 0.1)" }} // Light lime for cursor
+              wrapperStyle={{ outline: "none" }}
+            />
+            <Bar
+              dataKey="steps"
+              fill="url(#stepsBarGradient)"
+              background={{ fill: "rgba(132, 204, 2, 0.2)", radius: 17.5 }}
+              radius={17.5}
+              barSize={35}
+            />
+          </BarChart>
+        </ResponsiveContainer>
+      </motion.div>
+      <div className="flex">
+        <div className="grow">
+          <StatCard
+            icon={FootprintsIcon}
+            title="Distance"
+            value="5.2"
+            unit="km"
+          />
+          <StatCard icon={Clock} title="time" value="19.2" unit="hours" />
+        </div>
+        <BatteryIndicator value={65} />
+      </div>
+    </div>
+  );
+};
+
 const views = [
-  { name: "Stats", component: Stats, id: "stats", icon: BarChart2 }, // Added icon
   {
     name: "Activity",
     component: ActivityResume,
     id: "activity",
     icon: Activity,
-  }, // Added icon
+  },
+  {
+    name: "Steps Chart",
+    component: () => <StepsBarChart data={chartData} />,
+    id: "stepsbarchart",
+    icon: BarCharIcon,
+  },
+  /* { name: "Stats", component: Stats, id: "stats", icon: BarChart2 }, */
   {
     name: "How It Works",
     component: Instructions,
     id: "howitworks",
     icon: Info,
-  }, // Added icon
+  },
 ];
 
 const carouselVariants = {
@@ -938,6 +926,29 @@ const carouselVariants = {
     transition: { duration: 0.3, ease: "easeInOut" },
   }),
 };
+
+// Component to define SVG gradients
+const SvgDefs = () => (
+  <svg width="0" height="0" style={{ position: "absolute" }}>
+    <defs>
+      <linearGradient
+        id="iconStrokeGradient"
+        x1="0%"
+        y1="0%"
+        x2="100%"
+        y2="100%"
+      >
+        <stop offset="0%" style={{ stopColor: "#84cc16", stopOpacity: 1 }} />{" "}
+        {/* lime-500 */}
+        <stop
+          offset="100%"
+          style={{ stopColor: "#22d3ee", stopOpacity: 1 }}
+        />{" "}
+        {/* cyan-400 */}
+      </linearGradient>
+    </defs>
+  </svg>
+);
 
 const swipeThreshold = 75; // Min drag distance to trigger swipe
 
@@ -1017,6 +1028,17 @@ const App = () => {
         isDarkMode ? "dark bg-zinc-900" : "bg-zinc-100"
       } flex flex-col`}
     >
+      <SvgDefs />
+      <style>
+        {`.lucide-gradient-stroke path,
+.lucide-gradient-stroke line,
+.lucide-gradient-stroke polyline,
+.lucide-gradient-stroke circle,
+.lucide-gradient-stroke rect {
+  stroke: oklch(37% 0.013 285.805);
+  fill: url(#iconStrokeGradient);
+}`}
+      </style>
       {!hasSeenOnboarding && (
         <OnboardingScreen onComplete={handleOnboardingComplete} />
       )}
@@ -1050,20 +1072,15 @@ const App = () => {
                 </span>
               </motion.button>
             ))}
-            <BatteryIndicator value={65} />
           </div>
 
           <div className="flex-grow flex flex-col mt-4 mb-4">
-            {" "}
-            {/* Carousel main area */}
             <div className="relative flex-grow w-full overflow-hidden rounded-lg shadow-lg bg-white/70 dark:bg-zinc-800/70 backdrop-blur-sm">
               <AnimatePresence
                 initial={false}
                 custom={direction}
                 mode="popLayout"
               >
-                {" "}
-                {/* Changed mode to popLayout for smoother height transitions */}
                 <motion.div
                   key={views[currentViewIndex].id}
                   custom={direction}

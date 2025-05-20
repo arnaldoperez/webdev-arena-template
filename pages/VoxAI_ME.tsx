@@ -651,6 +651,7 @@ function App() {
                   <h2 className="text-lg font-bold flex items-center justify-between">
                     Menu
                     <span>
+                      {" "}
                       <button
                         className="p-2 rounded-full bg-gradient-to-r from-zinc-500 to-zinc-600 text-white shadow-lg shadow-zinc-500/20 hover:shadow-zinc-500/30 transition-all duration-200"
                         aria-label="Toggle sidebar"
