@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+// @ts-nocheck
 import { useState, useEffect, useRef } from "react";
 import { Menu, X, Send, StopCircle, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";

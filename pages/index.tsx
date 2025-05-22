@@ -1,694 +1,912 @@
-import { useState, useEffect, useRef, ChangeEventHandler } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
-  X,
-  Send,
-  ImagePlus,
-  Mic,
-  Pause,
-  XCircle,
-  Stars,
-  AlignLeft,
-  EllipsisVertical,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Bar,
+  BarChart,
+} from "recharts";
+import {
+  Droplets,
+  Footprints,
+  Heart,
+  Flame,
+  Battery,
+  Activity,
+  BarChart as BarCharIcon,
+  Info,
+  FootprintsIcon,
+  Clock,
+  ChevronLeft,
+  Menu,
+  ChevronRightCircle,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { Inter } from "next/font/google";
 
-interface ImageContent {
-  url: string;
-  name: string;
+const inter = Inter({ subsets: ["latin"] });
+
+const onboardingSlides = [
+  {
+    icon: Droplets,
+    title: "Track Your Hydration",
+    description:
+      "Monitor your water intake and stay hydrated throughout the day with personalized reminders.",
+  },
+  {
+    icon: Footprints,
+    title: "Activity Tracking",
+    description:
+      "Record your steps, distance covered, and active time with our advanced motion sensors.",
+  },
+  {
+    icon: Heart,
+    title: "Heart Health",
+    description:
+      "Keep tabs on your heart rate and rhythm with our built-in ECG monitoring system.",
+  },
+];
+
+interface ChartEntry {
+  day: string;
+  steps: number;
 }
+const chartData: ChartEntry[] = [
+  { day: "Mon", steps: 12000 },
+  { day: "Tue", steps: 15000 },
+  { day: "Wed", steps: 8000 },
+  { day: "Thu", steps: 10000 },
+  { day: "Fri", steps: 13000 },
+  { day: "Sat", steps: 7000 },
+  { day: "Sun", steps: 9000 },
+];
 
-interface Message {
-  role: "user" | "ai";
-  content: string;
-  timestamp: Date;
-  image?: ImageContent | null;
-}
-
-interface SpeechRecognitionEvent extends Event {
-  readonly resultIndex: number;
-  readonly results: SpeechRecognitionResultList;
-  // readonly interpretation: unknown; // Deprecated
-  // readonly emma: Document | null; // Deprecated
-}
-
-interface SpeechRecognitionResultList {
-  readonly length: number;
-  item(index: number): SpeechRecognitionResult;
-  [index: number]: SpeechRecognitionResult;
-}
-
-interface SpeechRecognitionResult {
-  readonly isFinal: boolean;
-  readonly length: number;
-  item(index: number): SpeechRecognitionAlternative;
-  [index: number]: SpeechRecognitionAlternative;
-}
-
-interface SpeechRecognitionAlternative {
-  readonly transcript: string;
-  readonly confidence: number;
-}
-
-interface SpeechRecognitionErrorEvent extends Event {
-  readonly error: string; // DOMException code, e.g., 'not-allowed', 'no-speech'
-  readonly message: string;
-}
-
-interface SpeechRecognitionStatic {
-  new (): SpeechRecognition;
-}
-
-interface SpeechRecognition extends EventTarget {
-  grammars: unknown; // In a full definition, this would be SpeechGrammarList
-  lang: string;
-  continuous: boolean;
-  interimResults: boolean;
-  maxAlternatives: number;
-  // serviceURI?: string; // Deprecated
-
-  start(): void;
-  stop(): void;
-  abort(): void;
-
-  onaudiostart: ((this: SpeechRecognition, ev: Event) => unknown) | null;
-  onaudioend: ((this: SpeechRecognition, ev: Event) => unknown) | null;
-  onend: ((this: SpeechRecognition, ev: Event) => unknown) | null;
-  onerror:
-    | ((this: SpeechRecognition, ev: SpeechRecognitionErrorEvent) => unknown)
-    | null;
-  onnomatch:
-    | ((this: SpeechRecognition, ev: SpeechRecognitionEvent) => unknown)
-    | null;
-  onresult:
-    | ((this: SpeechRecognition, ev: SpeechRecognitionEvent) => unknown)
-    | null;
-  onsoundstart: ((this: SpeechRecognition, ev: Event) => unknown) | null;
-  onsoundend: ((this: SpeechRecognition, ev: Event) => unknown) | null;
-  onspeechstart: ((this: SpeechRecognition, ev: Event) => unknown) | null;
-  onspeechend: ((this: SpeechRecognition, ev: Event) => unknown) | null;
-  onstart: ((this: SpeechRecognition, ev: Event) => unknown) | null;
-
-  addEventListener<K extends keyof SpeechRecognitionEventMap>(
-    type: K,
-    listener: (
-      this: SpeechRecognition,
-      ev: SpeechRecognitionEventMap[K]
-    ) => unknown,
-    options?: boolean | AddEventListenerOptions
-  ): void;
-  removeEventListener<K extends keyof SpeechRecognitionEventMap>(
-    type: K,
-    listener: (
-      this: SpeechRecognition,
-      ev: SpeechRecognitionEventMap[K]
-    ) => unknown,
-    options?: boolean | EventListenerOptions
-  ): void;
-}
-
-// Map event types to their event object types
-interface SpeechRecognitionEventMap {
-  audiostart: Event;
-  audioend: Event;
-  end: Event;
-  error: SpeechRecognitionErrorEvent;
-  nomatch: SpeechRecognitionEvent;
-  result: SpeechRecognitionEvent;
-  soundstart: Event;
-  soundend: Event;
-  speechstart: Event;
-  speechend: Event;
-  start: Event;
-}
-
-declare global {
-  interface Window {
-    SpeechRecognition?: SpeechRecognitionStatic;
-    webkitSpeechRecognition?: SpeechRecognitionStatic; // For browsers like Safari, older Chrome/Edge
-  }
-}
-
-const formatTime = (date: Date) => {
-  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+const chartConfig = {
+  steps: {
+    label: "Steps",
+    color: "#84cc16",
+  },
 };
 
-const NavBar = ({
-  handleClearChat,
-  toggleSidebar,
-  isSidebarOpen,
-  isTalking,
-}: {
-  handleClearChat: () => void;
-  toggleSidebar: () => void;
-  isSidebarOpen: boolean;
-  isTalking: boolean;
-}) => {
-  return (
-    <header className="px-4 py-4 flex justify-between items-center bg-white/80 dark:bg-zinc-800/80 backdrop-blur-sm border-b border-blue-100 dark:border-gray-700 z-10">
-      <button
-        onClick={toggleSidebar}
-        className="p-2 rounded-full bg-gradient-to-r from-zinc-500 to-zinc-600 text-white shadow-lg shadow-zinc-500/20 hover:shadow-zinc-500/30 transition-all duration-200"
-        aria-label="Toggle sidebar"
-      >
-        {isSidebarOpen ? (
-          <X className="h-5 w-5" />
-        ) : (
-          <AlignLeft className="h-5 w-5" />
-        )}
-      </button>
-      <h1 className="text-xl flex font-bold text-white  bg-clip-text text-transparent">
-        <Stars className="h-5 w-5 mr-4" />
-        {isTalking ? "Talk with Vox AI" : "Vox AI"}
-      </h1>
-      <motion.button
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        onClick={handleClearChat}
-        className="p-2 rounded-full bg-gradient-to-r from-zinc-500 to-zinc-600 text-white shadow-lg shadow-zinc-500/20 hover:shadow-zinc-500/30 transition-all duration-200"
-      >
-        <EllipsisVertical className="h-5 w-5" />
-      </motion.button>
-    </header>
-  );
-};
+const instructionsData = [
+  {
+    icon: Droplets,
+    title: "Hydration Tracking",
+    description:
+      "Monitor your water intake throughout the day with smart reminders.",
+  },
+  {
+    icon: Footprints,
+    title: "Advanced Step Tracking",
+    description:
+      "Accurate step count with distance traveled and calories burned.",
+  },
+  {
+    icon: Heart,
+    title: "Continuous Heart Monitoring",
+    description: "Keep tabs on your heart rate and rhythm with built-in ECG.",
+  },
+  {
+    icon: Battery,
+    title: "Long Battery Life",
+    description: "Up to 5 days on a single charge with power-saving features.",
+  },
+];
 
-const UserInput = ({
-  newMessageHandler,
-  recognition,
-  onListeningChange,
-}: {
-  newMessageHandler: (message: Message) => void;
-  recognition: SpeechRecognition | undefined;
-  onListeningChange: (isListening: boolean) => void;
-}) => {
-  const [userInput, setUserInput] = useState("");
-  const [speechInput, setSpeechInput] = useState<string>("");
-  const [image, setImage] = useState<ImageContent | null>();
-  const [isListening, setIsListening] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
+const instructions = [
+  { title: "Power Indicators", category: "Guide" },
+  { title: "Wheather Forecast", category: "Tutorial" },
+  { title: "High Performance", category: "Support" },
+];
 
-  useEffect(() => {
-    if (!recognition) return;
-
-    console.log("Initializing SpeechRecognition event listeners in UserInput");
-    console.log(recognition);
-    recognition.onstart = () => {
-      setIsListening(true);
-    };
-
-    recognition.onend = () => {
-      setIsListening(false);
-    };
-
-    recognition.onerror = (event) => {
-      console.error("Speech recognition error", event);
-      setIsListening(false);
-    };
-
-    recognition.onresult = (event) => {
-      console.log("Speech recognition result", event);
-      const transcript = Array.from(event.results)
-        .map((result) => {
-          console.log(result[0].transcript);
-          return result[0].transcript;
-        })
-        .join("");
-      setSpeechInput(transcript);
-    };
-    // Depend on recognition.current so if it changes, listeners are re-attached.
-    // Note: SpeechRecognition instance itself might not be stable if re-created in parent.
-  }, [recognition]); // Added recognition.current for robustness
-
-  useEffect(
-    () => onListeningChange(isListening),
-    [isListening, onListeningChange]
-  );
-
-  const toggleSpeechListening = () => {
-    if (recognition) {
-      setIsPaused(false);
-      if (!isListening) {
-        console.log("Starting listening");
-        recognition.start();
-        setIsListening(true);
-      } else {
-        recognition.stop();
-        setIsListening(false);
-        setUserInput(speechInput || "");
-      }
-    }
-  };
-
-  const cancelSPeechListening = () => {
-    if (recognition) {
-      recognition.stop();
-      setIsListening(false);
-    }
-  };
-
-  const toggleSpeechPause = () => {
-    if (!recognition) return;
-    if (isPaused) {
-      recognition.start();
-      setIsPaused(false);
-    } else {
-      recognition.stop();
-      setIsPaused(true);
-    }
-  };
-
-  const fileDialog = useRef<HTMLInputElement>(null);
-
-  const handleSendMessage = () => {
-    const newMessage = {
-      role: "user" as const,
-      content: userInput,
-      timestamp: new Date(),
-      image,
-    };
-    if (userInput.trim() === "") return;
-    newMessageHandler(newMessage);
-    setUserInput("");
-    setImage(null);
-  };
-  const handleFileSelect: ChangeEventHandler<HTMLInputElement> = (e) => {
-    const files = e.target.files;
-    if (!files || files.length == 0) return;
-    console.log({ files: files.length });
-    for (let i = 0; i < files.length; i++) {
-      const file = files.item(i);
-      if (!file) continue;
-      const image = {
-        url: URL.createObjectURL(file),
-        name: file.name,
-      };
-      setImage(image);
-    }
-  };
-
-  const removeImage = () => {
-    setImage(null);
-  };
-
-  return (
-    <div className="sticky bottom-0 left-0 right-0 bg-white/80 dark:bg-zinc-800/80 backdrop-blur-sm p-1">
-      {image && (
-        <div className="absolute right-4 bottom-full mb-2 flex gap-2 p-2 bg-white/70 dark:bg-zinc-700/70 backdrop-blur-sm rounded-lg shadow-md max-w-xs sm:max-w-md md:max-w-lg ">
-          <div className="relative group flex-shrink-0">
-            <img
-              src={image.url}
-              alt={image.name}
-              className="w-32 h-32 object-cover rounded-md border border-gray-300 dark:border-gray-600"
-            />
-            <button
-              onClick={() => removeImage()}
-              className="absolute top-0 right-0 -mt-1 -mr-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600 transition-colors"
-              aria-label="Remove image"
-            >
-              &times;
-            </button>
-          </div>
-        </div>
-      )}
-      <div className="flex gap-1 items-center justify-between">
-        {!isListening && (
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => fileDialog.current?.click()}
-            className="p-3 rounded-lg hover:bg-gradient-to-r from-violet-500 to-cyan-600 text-white transition-all duration-200"
-            aria-label="Send message"
-          >
-            <input
-              type="file"
-              name="image"
-              id=""
-              className="hidden"
-              ref={fileDialog}
-              onChange={handleFileSelect}
-              accept="image/*"
-            />
-            <ImagePlus className="h-5 w-5" />
-          </motion.button>
-        )}
-        {!isListening && (
-          <div className="flex flex-1 items-center rounded-full bg-white/50 dark:bg-zinc-700/50 backdrop-blur-sm border border-blue-100 dark:border-gray-600 focus-within:ring-2 focus-within:ring-blue-500 transition-all duration-200">
-            <input
-              type="text"
-              value={userInput}
-              onChange={(e) => setUserInput(e.target.value)}
-              className="flex-1 bg-transparent px-4 py-3 outline-none placeholder-gray-500 dark:placeholder-gray-400"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  // Prevent newline on Enter, allow Shift+Enter
-                  e.preventDefault();
-                  handleSendMessage();
-                }
-              }}
-              placeholder="Type your message..."
-            />
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={handleSendMessage}
-              className="p-3 rounded-full hover:bg-gradient-to-r from-violet-500 to-cyan-600 text-white transition-all duration-200 mr-1" // Added mr-1 for slight spacing from edge
-              aria-label="Send message"
-            >
-              <Send className="h-5 w-5 text-blue-500" />
-            </motion.button>
-          </div>
-        )}
-        {isListening && (
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={toggleSpeechPause}
-            className={`p-3 rounded-lg hover:bg-gradient-to-r from-violet-500 to-cyan-600 text-white transition-all duration-200`}
-            aria-label="Send message"
-          >
-            <Pause className="h-5 w-5" />
-          </motion.button>
-        )}
-        {isListening && (
-          <motion.button
-            style={{ scale: 2 }}
-            onClick={toggleSpeechListening}
-            className="p-3 mb-5 relative bg-gradient-to-r from-violet-500 to-cyan-600 text-white rounded-full transition-all duration-500"
-            aria-label="Send message"
-          >
-            <Mic className="h-5 w-5" />
-          </motion.button>
-        )}
-
-        {recognition && (
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() =>
-              isListening ? cancelSPeechListening() : toggleSpeechListening()
-            }
-            className={`p-3 rounded-lg hover:bg-gradient-to-r from-violet-500 to-cyan-600 text-white transition-all duration-200`}
-            aria-label="Send message"
-          >
-            {isListening ? (
-              <XCircle className="h-5 w-5" />
-            ) : (
-              <Mic className="h-5 w-5" />
-            )}
-          </motion.button>
-        )}
-      </div>
-    </div>
-  );
-};
-
-const MessageContent = ({ message }: { message: Message }) => {
-  return (
-    <div className="flex flex-col">
-      {message.image && (
-        <img
-          src={message.image.url}
-          alt="AI generated content"
-          className="rounded-lg max-w-full h-auto"
-        />
-      )}
-      <span>{message.content}</span>
-      <span className="text-xs text-zinc-500 mt-1">
-        {formatTime(message.timestamp)}
-      </span>
-    </div>
-  );
-};
-
-interface SplashScreenProps {
-  imageUrl: string;
+interface StatCardProps extends React.HTMLAttributes<HTMLDivElement> {
   title: string;
-  text: string;
-  onComplete?: () => void; // Optional: Callback for when splash is done (e.g., after a button click or timeout)
-  buttonText?: string; // Optional: Text for a continue button
+  value: string;
+  icon: LucideIcon;
+  unit: string;
+  fullHeight?: boolean;
 }
-
-const SplashScreen: React.FC<SplashScreenProps> = ({
-  imageUrl,
+const StatCard = ({
   title,
-  text,
-  onComplete,
-  buttonText = "Get Started",
+  value,
+  unit,
+  icon: Icon,
+  fullHeight = false,
+}: StatCardProps) => (
+  <motion.div
+    className={`${
+      fullHeight ? "h-full mb-2" : ""
+    } bg-zinc-800 backdrop-blur-lg rounded-2xl overflow-hidden flex items-start justify-between transition-all duration-300 hover:shadow-lg`}
+    whileHover={{ y: -2 }}
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.3 }}
+  >
+    <div className="flex-1 p-5">
+      <p className="text-sm font-medium text-gray-400 tracking-wider">
+        {title}
+      </p>
+      <p className="text-4xl text-gray-200 font-bold transition-all duration-300 group-hover:scale-105">
+        {value}
+        <span className="ml-1 text- sm font-medium text-gray-400">
+          {unit}
+        </span>
+      </p>
+    </div>
+
+    <div className="p-3 rounded-lg">
+      <Icon className="w-8 h-8 lucide-gradient-stroke" />
+    </div>
+  </motion.div>
+);
+
+const ActivityChart = ({
+  data,
+  selectedRange,
+}: {
+  data: ChartEntry[];
+  selectedRange: string;
+  onRangeChange: (range: string) => void;
 }) => {
+  const filteredData = data.slice(0, selectedRange === "week" ? 7 : 30);
+
   return (
     <motion.div
-      className="fixed inset-0 w-full h-full flex flex-col items-center justify-end z-50"
+      className="bg-zinc-800/90 backdrop-blur-lg rounded-2xl p-5 transition-all duration-300 hover:shadow-lg"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
+      <div className="h-32">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart
+            data={filteredData}
+            margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+          >
+            <defs>
+              <linearGradient id="colorSteps" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#bef264" stopOpacity={0.8} />
+                <stop offset="95%" stopColor="#67e8f9" stopOpacity={0.8} />
+              </linearGradient>
+            </defs>
+            <Line
+              type="monotone"
+              dataKey="steps"
+              stroke={chartConfig.steps.color}
+              fill="url(#colorSteps)"
+              strokeWidth={3}
+              name="Steps"
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+      <div className="flex-grow">
+        <p className="text-sm font-medium text-gray-400 tracking-wider">
+          Heat Rate
+        </p>
+        <p className="text-4xl text-gray-200 font-bold transition-all duration-300 group-hover:scale-105">
+          74
+          <span className="ml-1 text-sm font-medium text-gray-400 tracking-wider">
+            bpm
+          </span>
+        </p>
+      </div>
+    </motion.div>
+  );
+};
+
+const DistanceCounter = ({}) => {
+  return (
+    <motion.div
+      className="bg-zinc-800/90 backdrop-blur-lg rounded-2xl p-5 transition-all duration-300 hover:shadow-lg"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
+      <div className="h-32">
+        <ResponsiveContainer className="p-6" width="100%" height="100%">
+          <Footprints className="rotate-90 lucide-gradient-stroke" />
+        </ResponsiveContainer>
+      </div>
+      <div className="flex-grow">
+        <div className="text-4xl  text-gray-200 font-bold transition-all duration-300 group-hover:scale-105">
+          2.9k
+          <span className="ml-1 text-sm font-medium text-gray-400 tracking-wider">
+            steps
+          </span>
+          <p className="text-sm font-medium text-gray-400 tracking-wider">
+            Distance: 2.2 mi
+          </p>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
+const OnboardingScreen = ({ onComplete }: { onComplete: () => void }) => {
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [showSplash, setShowSplash] = useState(true)
+
+  useEffect(() => {
+    const timer= setTimeout(() => {
+      setShowSplash(false);
+    }, 3000);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [])
+
+  const nextSlide = () => {
+    if (currentSlide < onboardingSlides.length - 1) {
+      setCurrentSlide(currentSlide + 1);
+    } else {
+      onComplete();
+    }
+  };
+
+  const prevSlide = () => {
+    if (currentSlide > 0) {
+      setCurrentSlide(currentSlide - 1);
+    }
+  };
+
+  return (
+    <motion.div
+      className="fixed inset-0 bg-white dark:bg-zinc-900 z-50 flex items-center justify-center p-4"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.5 }}
+      exit={{ opacity: 0, transition: { duration: 0.3 } }}
     >
-      {/* Background Image */}
-      <img
-        src={imageUrl}
-        alt="Splash screen background"
-        className="absolute inset-0 w-full h-full object-cover"
-      />
-
-      {/* Gradient Overlay */}
-      <div className="absolute bottom-0 left-0 right-0 h-3/5 bg-gradient-to-t from-black via-black/80 to-transparent" />
-
-      {/* Content */}
+      {showSplash?<motion.div className="flex flex-column justify-between h-full w-full p-4">
+        <div className="flex justify-between w-full">
+          <h2 className="text-zinc-400 text-2xl">Meet</h2>
+          <ChevronRightCircle size={36} onClick={() => setShowSplash(false)} />
+        </div>
+      </motion.div>:
       <motion.div
-        className="relative z-10 p-8 md:p-12 text-center text-white mb-8 md:mb-16 max-w-2xl"
-        initial={{ y: 50, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.3, duration: 0.7, ease: "easeOut" }}
+        className="bg-white dark:bg-zinc-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
+        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.9, opacity: 0, y: 20, transition: { duration: 0.3 } }}
+        transition={{
+          type: "spring",
+          stiffness: 300,
+          damping: 25,
+          delay: 0.1,
+        }}
       >
-        <h1 className="text-4xl md:text-5xl font-bold mb-4 drop-shadow-lg">
-          {title}
-        </h1>
-        <p className="text-lg md:text-xl mb-8 leading-relaxed drop-shadow-md">
-          {text}
-        </p>
-        {onComplete && (
-          <motion.button
-            onClick={onComplete}
-            className="px-8 py-3 bg-gradient-to-r from-violet-500 to-cyan-600 text-white font-semibold rounded-lg shadow-lg transition-colors duration-300 text-lg"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            {buttonText}
-          </motion.button>
-        )}
+        <div className="h-64 relative overflow-hidden">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentSlide}
+              className="absolute inset-0"
+              initial={{ opacity: 0, x: 100 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -100 }}
+              transition={{
+                duration: 0.5,
+                ease: [0.4, 0, 0.2, 1],
+              }}
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-lime-500 to-lime-600" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-24 h-24 rounded-full bg-white/10 flex items-center justify-center">
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{
+                      delay: 0.2,
+                      duration: 0.5,
+                      type: "spring",
+                      stiffness: 260,
+                      damping: 20,
+                    }}
+                  >
+                    {React.createElement(onboardingSlides[currentSlide].icon, {
+                      className: "w-12 h-12 text-white",
+                    })}
+                  </motion.div>
+                </div>
+              </div>
+              <div className="absolute inset-0 opacity-10">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 100 100"
+                  preserveAspectRatio="none"
+                  className="w-full h-full"
+                >
+                  <path
+                    d="M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z"
+                    fill="currentColor"
+                  />
+                </svg>
+              </div>
+            </motion.div>
+          </AnimatePresence>
+        </div>
+        <div className="p-6">
+          <div className="mb-6 text-center">
+            <motion.h2
+              className="text-2xl font-bold text-gray-900 dark:text-white mb-2"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.5 }}
+            >
+              {onboardingSlides[currentSlide].title}
+            </motion.h2>
+            <motion.p
+              className="text-gray-600 dark:text-gray-300"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.5 }}
+            >
+              {onboardingSlides[currentSlide].description}
+            </motion.p>
+          </div>
+          <div className="flex justify-between items-center mb-6">
+            <div className="flex space-x-2">
+              {onboardingSlides.map((_, index) => (
+                <motion.button
+                  key={index}
+                  className={`w-2 h-2 rounded-full transition-all duration-300 focus:outline-none ${
+                    index === currentSlide
+                      ? "bg-lime-500 w-4"
+                      : "bg-gray-300 dark:bg-gray-600"
+                  }`}
+                  onClick={() => setCurrentSlide(index)}
+                  whileHover={{ scale: 1.5 }}
+                  whileTap={{ scale: 0.8 }}
+                  aria-label={`Go to slide ${index + 1}`}
+                />
+              ))}
+            </div>
+            <motion.button
+              className="px-4 py-2 bg-lime-500 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500 focus:ring-offset-2 transition-all duration-200 shadow-lg"
+              onClick={nextSlide}
+              whileHover={{
+                scale: 1.05,
+                boxShadow: "0 10px 25px -5px rgba(132, 204, 2, 0.5)",
+              }}
+              whileTap={{ scale: 0.95 }}
+            >
+              {currentSlide < onboardingSlides.length - 1
+                ? "Next"
+                : "Get Started"}
+            </motion.button>
+          </div>
+          <div className="flex justify-between">
+            <motion.button
+              className={`px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500 focus:ring-offset-2 transition-all duration-200 ${
+                currentSlide === 0
+                  ? "text-gray-400 dark:text-gray-600 cursor-not-allowed"
+                  : "text-lime-500 hover:bg-lime-50 dark:hover:bg-lime-900/20"
+              }`}
+              onClick={prevSlide}
+              disabled={currentSlide === 0}
+              whileHover={currentSlide !== 0 ? { scale: 1.05 } : {}}
+              whileTap={currentSlide !== 0 ? { scale: 0.95 } : {}}
+            >
+              Back
+            </motion.button>
+            <div className="text-sm text-gray-500 dark:text-gray-400">
+              {currentSlide + 1} of {onboardingSlides.length}
+            </div>
+          </div>
+        </div>
+      </motion.div>
+}
+    </motion.div>
+  );
+};
+
+const BatteryIndicator = ({ value }: { value: number }) => {
+  return (
+    <motion.div
+      className="h-full flex flex-col justify-between items-center bg-white/90 dark:bg-zinc-800/90 rounded-lg p-3 text-center group transition-all duration-200 hover:shadow-lg"
+      whileHover={{ y: -2 }}
+    >
+      <div className="text-gray-500 drop-shadow-sm">
+        <p className="text-lg  font-semibold dark:text-gray-100 ">
+        {value}%
+      </p>
+      <p className="text-xs dark:text-gray-200">
+        Battery
+      </p>
+      </div>
+
+      <motion.div
+        className="w-full h-32 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-end relative overflow-hidden group transition-all duration-300 hover:shadow-md"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        <motion.div
+          className="absolute left-0 w-full bg-zinc-500 rounded-lg" // Green progress
+          initial={{ height: 0 }}
+          animate={{ height: `${value}%` }}
+          transition={{ duration: 1, ease: "easeInOut" }}
+        />
       </motion.div>
     </motion.div>
   );
 };
 
-function App() {
-  const [chatMessages, setChatMessages] = useState<Array<Message>>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isListening, setIsListening] = useState(false);
-  const [speechRecognition, setSpeechRecognition] =
-    useState<SpeechRecognition>();
-  const [hideSplash, setHideSplash] = useState(false);
+const NavBar = ({
+  menuClickHandler,
+  currentView,
+}: {
+  menuClickHandler: () => void;
+  currentView: number;
+}) => {
+  return (
+    <div className="flex justify-between items-start sm:items-center mb-8">
+      <motion.button
+        className="p-2 sm:px-4 sm:py-2 rounded-full hover:outline-none hover:ring-2 border-2 transition-all duration-200 bg-transparent dark:text-zinc-400 dark:border-zinc-400 dark:hover:ring-lime-400 text-zinc-700 border-zinc-800 hover:ring-lime-700"
+        onClick={menuClickHandler}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+      >
+        {currentView == 0 ? <Menu /> : <ChevronLeft />}
+      </motion.button>
+      <div className={`flex space-x-2 dark:text-zinc-400 text-zinc-800`}>
+        <div className="flex flex-col ml-12">
+          <p className="text-xs font-medium">Good morning</p>
+          <p className="font-bold">Jhon Doe</p>
+        </div>
+        <img
+          className="w-10 h-10 ml-4 rounded-full"
+          src="https://randomuser.me/api/portraits/men/61.jpg"
+          alt="profile"
+        />
+      </div>
+    </div>
+  );
+};
+
+interface InstructionProps extends React.HTMLAttributes<HTMLDivElement> {
+  title: string;
+  category: string;
+  bgPicture: string;
+}
+
+const Instruction = ({ title, category, bgPicture }: InstructionProps) => {
+  return (
+    <div
+      style={{
+        backgroundImage: `url(${bgPicture})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+      className="relative overflow-hidden rounded-xl shadow-lg h-48 w-40 group transition-all duration-300 hover:scale-105 flex-shrink-0"
+    >
+      <div className="absolute bottom-0 left-0 right-0 px-3 pt-8 pb-3 bg-gradient-to-t from-zinc-900 dark:via-zinc-900/80 dark:to-transparent">
+        <h3 className="text-xs font-bold tracking-wider">{title}</h3>
+        <p className="text-xs text-zinc-100 mt-1 truncate">{category}</p>
+      </div>
+    </div>
+  );
+};
+
+const ActivityResume = () => {
+  const [selectedRange, setSelectedRange] = useState("week");
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <div className="grid gap-4 grid-cols-2 grid-flow-row">
+        <h2
+          style={{ fontSize: "1.5rem" }}
+          className="t2 font-bold text-zinc-900 dark:text-zinc-300 col-span-2"
+        >
+          Your Metrics
+        </h2>
+        <StatCard
+          icon={Droplets}
+          title="Water"
+          value="1.5"
+          unit="litres"
+        ></StatCard>
+        <div className="row-span-2">
+          <DistanceCounter />
+        </div>
+        <div className="row-span-2">
+          <ActivityChart
+            data={chartData}
+            selectedRange={selectedRange}
+            onRangeChange={setSelectedRange}
+          />
+        </div>
+        <StatCard
+          icon={Flame}
+          title="Calories"
+          value="3.2K"
+          unit="cal"
+        ></StatCard>
+      </div>
+      <div className="backdrop-blur-lg rounded-2xl transition-all duration-300 hover:shadow-lg">
+        <h2
+          style={{ fontSize: "1.5rem" }}
+          className="font-bold text-white mb-4"
+        >
+          How it works
+        </h2>
+        {/* Container for scrollable instruction cards */}
+        <div
+          style={{
+            scrollbarWidth: "thin",
+            scrollbarColor:
+              "oklch(53.2% 0.157 131.589) oklch(27.4% 0.006 286.033)",
+          }}
+          className="snap-x flex overflow-x-auto space-x-4 pb-2 scrollbar-thin scrollbar-thumb-lime-500 scrollbar-track-lime-200 dark:scrollbar-thumb-lime-600 dark:scrollbar-track-zinc-700"
+        >
+          {instructions.map((instruction, index) => (
+            <Instruction
+              className="snap-center"
+              key={index}
+              title={instruction.title}
+              category={instruction.category}
+              bgPicture={`https://picsum.photos/seed/${(
+                index + 1
+              ).toString()}/300/200`}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const Instructions = () => {
+  return (
+    <div className="bg-white/90 dark:bg-zinc-800/90 backdrop-blur-lg rounded-2xl p-6 transition-all duration-300 hover:shadow-lg">
+      <h2
+        style={{ fontSize: "1.5rem" }}
+        className="font-bold text-gray-900 dark:text-white mb-4"
+      >
+        How It Works
+      </h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {instructionsData.map((feature, index) => (
+          <motion.div
+            key={index}
+            className="flex flex-col p-4 bg-zinc-50 dark:bg-zinc-800 rounded-xl transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-105"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1 }}
+            whileHover={{ y: -5 }}
+          >
+            <div className="flex items-center space-x-3 mb-3">
+              <div className="text-lime-500 dark:text-lime-400">
+                <feature.icon className="w-5 h-5" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                {feature.title}
+              </h3>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              {feature.description}
+            </p>
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const StepsBarChart = ({ data }: { data: ChartEntry[] }) => {
+  const totalSteps = useMemo(() => {
+    return data.reduce((current, day) => day.steps + current, 0);
+  }, [data]);
+  return (
+    <div>
+      <div className="flex justify-between items-center">
+        <div>
+          <h2
+            style={{ fontSize: "1.5rem" }}
+            className="mb-2 font-bold text-zinc-900 dark:text-white"
+          >
+            My Activity
+          </h2>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            Total Steps
+          </p>
+          <h2
+            style={{ fontSize: "1.4rem" }}
+            className="mb-2 font-bold text-zinc-900 dark:text-white"
+          >
+            {totalSteps}
+          </h2>
+        </div>
+        <motion.select className="h-10 p-2 rounded-full border-2 text-zinc-500 border-zinc-100 border-zinc-800 bg-zinc-400 dark:text-zinc-200 dark:border-zinc-500 dark:bg-zinc-700">
+          <option value="week">This week</option>
+          <option value="month">This month</option>
+        </motion.select>
+      </div>
+      <motion.div
+        className="bg-white/90 h-96 dark:bg-zinc-800/90 backdrop-blur-lg rounded-2xl p-6 transition-all duration-300 hover:shadow-lg border-2 border-zinc-100 dark:border-zinc-700" // Removed h-full, flex, flex-col
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+            data={data}
+            margin={{ top: 5, right: 10, left: -20, bottom: 5 }}
+          >
+            <defs>
+              <linearGradient id="stepsBarGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#bef264" stopOpacity={0.8} />
+                <stop offset="95%" stopColor="#67e8f9" stopOpacity={0.8} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid
+              strokeDasharray="3 3"
+              vertical={false}
+              strokeOpacity={0.2}
+              stroke={chartConfig.steps.color}
+            />
+            <XAxis
+              dataKey="day"
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: "#9CA3AF", fontSize: 12 }}
+              dy={10}
+            />
+            <YAxis
+              axisLine={false}
+              tickLine={false}
+              tick={{ fill: "#9CA3AF", fontSize: 12 }}
+              dx={-10}
+              tickFormatter={(value) =>
+                value >= 1000 ? `${value / 1000}k` : value.toString()
+              }
+            />
+            <Tooltip
+              content={({ active, payload, label }) => {
+                if (active && payload && payload.length) {
+                  return (
+                    <motion.div
+                      className="bg-white dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700 rounded-lg p-3 shadow-lg backdrop-blur-sm"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                    >
+                      <p
+                        className="font-bold text-zinc-900 dark:text-white"
+                        style={{ color: chartConfig.steps.color }}
+                      >
+                        {label}
+                      </p>
+                      <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+                        Steps:{" "}
+                        {payload[0].value
+                          ?.toString()
+                          .replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+                      </p>
+                    </motion.div>
+                  );
+                }
+                return null;
+              }}
+              cursor={{ fill: "rgba(132, 204, 2, 0.1)" }} // Light lime for cursor
+              wrapperStyle={{ outline: "none" }}
+            />
+            <Bar
+              dataKey="steps"
+              fill="url(#stepsBarGradient)"
+              background={{ fill: "rgba(0, 0, 0, 0.2)", radius: 17.5 }}
+              radius={17.5}
+              barSize={35}
+            />
+          </BarChart>
+        </ResponsiveContainer>
+      </motion.div>
+      <div className="flex p-4 gap-4">
+        <div className="grow flex gap-4 flex-col">
+          <StatCard
+            icon={FootprintsIcon}
+            title="Distance"
+            value="5.2"
+            unit="km"
+          />
+          <StatCard icon={Clock} title="time" value="19.2" unit="hours" />
+        </div>
+        <div className="w-md">
+          <BatteryIndicator value={65} />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const views = [
+  {
+    name: "Activity",
+    component: ActivityResume,
+    id: "activity",
+    icon: Activity,
+  },
+  {
+    name: "Steps Chart",
+    component: () => <StepsBarChart data={chartData} />,
+    id: "stepsbarchart",
+    icon: BarCharIcon,
+  },
+  {
+    name: "How It Works",
+    component: Instructions,
+    id: "howitworks",
+    icon: Info,
+  },
+];
+
+
+const SvgDefs = () => (
+  <svg width="0" height="0" style={{ position: "absolute" }}>
+    <defs>
+      <linearGradient
+        id="iconStrokeGradient"
+        x1="0%"
+        y1="0%"
+        x2="100%"
+        y2="100%"
+      >
+        <stop offset="0%" style={{ stopColor: "#84cc16", stopOpacity: 1 }} />{" "}
+        <stop offset="100%" style={{ stopColor: "#22d3ee", stopOpacity: 1 }} />
+      </linearGradient>
+    </defs>
+  </svg>
+);
+
+const App = () => {
+  const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
+
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  // Carousel state: [index, direction]
+  const [currentViewIndex, setCurrentViewIndex] = useState(0);
 
   useEffect(() => {
-    const SpeechRecognition =
-      window.SpeechRecognition || window.webkitSpeechRecognition;
-
-    if (!SpeechRecognition) {
-      console.error("Speech recognition not supported");
-      return;
-    }
-    const newSpeechRecognition = new SpeechRecognition();
-    newSpeechRecognition.continuous = true;
-    newSpeechRecognition.interimResults = true;
-    newSpeechRecognition.lang = "en-US";
-    setSpeechRecognition(newSpeechRecognition);
-
-    //recognition.current = recognition;
-    //return true;
+    const prefersDark = window.matchMedia(
+      "(prefers-color-scheme: dark)"
+    ).matches;
+    setIsDarkMode(prefersDark);
+    const systemDarkMode = window.matchMedia(
+      "(prefers-color-scheme: dark)"
+    ).matches;
+    setIsDarkMode(systemDarkMode);
   }, []);
 
   useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    if (isDarkMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
     }
-  }, [chatMessages]);
+  }, [isDarkMode]);
 
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
+  const handleOnboardingComplete = () => {
+    setHasSeenOnboarding(true);
   };
 
-  const handleSendMessage = (newMessage: Message) => {
-    setIsLoading(true);
-
-    setChatMessages([...chatMessages, newMessage]);
-
-    setTimeout(() => {
-      const aiResponse: Message = {
-        role: "ai" as const,
-        content: `You said: ${newMessage.content}`,
-        timestamp: new Date(),
-      };
-
-      if (newMessage.image) {
-        aiResponse.image = newMessage.image;
-        aiResponse.content =
-          aiResponse.content + " And also sent this image 👆";
-      }
-
-      setChatMessages((prev) => [...prev, aiResponse]);
-      setIsLoading(false);
-    }, 1000);
+  const handleMenuClick = () => {
+    if (currentViewIndex != 0) setCurrentViewIndex(0);
+  };
+  const setViewIndex = (index: number) => {
+    setCurrentViewIndex(index);
   };
 
-  const handleClearChat = () => {
-    setChatMessages([]);
-  };
-
-  if (!hideSplash)
-    return (
-      <SplashScreen
-        imageUrl="https://images2.alphacoders.com/107/thumb-1920-1077531.jpg"
-        title="Vox AI"
-        text="The most epic AI ever created"
-        buttonText="Get Started"
-        onComplete={() => setHideSplash(true)}
-      />
-    );
-  else
-    return (
-      <div className="flex h-screen bg-gradient-to-br from-gray-900 dark:to-gray-800 text-gray-900 dark:text-gray-100 overflow-hidden">
-        <div className="flex flex-col w-full">
-          <NavBar
-            handleClearChat={handleClearChat}
-            toggleSidebar={toggleSidebar}
-            isSidebarOpen={isSidebarOpen}
-            isTalking={isListening}
-          />
-          <main className="flex flex-col bg-zinc-800 flex-1 relative overflow-hidden">
-            {!isListening ? (
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {chatMessages.map((message, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className={`flex items-center ${
-                      message.role === "user" ? "justify-end" : "justify-start"
-                    }`}
-                  >
-                    {message.role === "ai" && <Stars />}
-                    <div
-                      className={`max-w-md p-4 rounded-lg shadow-lg ${
-                        message.role === "user"
-                          ? "bg-gray-700 text-white"
-                          : "bg-white/90 dark:bg-zinc-800/90 backdrop-blur-sm dark:border-gray-700"
-                      }`}
-                    >
-                      <MessageContent message={message} />
-                    </div>
-                  </motion.div>
-                ))}
-
-                {isLoading && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.3 }}
-                    className="flex justify-start"
-                  >
-                    <div className="max-w-md p-4 rounded-lg bg-white/90 dark:bg-zinc-800/90 backdrop-blur-sm border border-blue-100 dark:border-gray-700">
-                      <div className="flex space-x-2">
-                        <div className="h-2 w-2 bg-blue-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                        <div className="h-2 w-2 bg-blue-500 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                        <div className="h-2 w-2 bg-blue-500 rounded-full animate-bounce"></div>
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-
-                <div ref={messagesEndRef} />
-              </div>
-            ) : (
-              <div className="flex-1 overflow-y-auto p-4 flex justify-center items-center">
-                <div className="relative w-32 h-32">
-                  <div className=" bg-blue-500 shadow-xl shadow-blue-500/50 absolute inset-0 w-32 h-32 bg-gradient-to-r from-cyan-500/50 to-purple-600/50 rounded-full animate-spin flex items-center justify-center"></div>
-                  <div
-                    className="rotate-180 bg-blue-500 shadow-xl shadow-purple-500/50 absolute inset-0 w-32 h-32 bg-gradient-to-r from-indigo-500/50 to-pink-600/50 rounded-full animate-spin flex items-center justify-center"
-                    style={{ animationDelay: "-0.5s" }}
-                  ></div>{" "}
-                  {/* Optional: offset spin for better visual effect */}
-                  <div className="rotate-90 bg-blue-500 shadow-xl shadow-blue-500/50 absolute inset-0 w-32 h-32 bg-gradient-to-r from-cyan-500/50 to-purple-600/50 rounded-full animate-spin flex items-center justify-center"></div>
-                  <div
-                    className="rotate-270 bg-blue-500 shadow-xl shadow-purple-500/50 absolute inset-0 w-32 h-32 bg-gradient-to-r from-indigo-500/50 to-pink-600/50 rounded-full animate-spin flex items-center justify-center"
-                    style={{ animationDelay: "-0.5s" }}
-                  ></div>{" "}
-                  {/* Optional: offset spin for better visual effect */}
-                </div>
-              </div>
-            )}
-            <UserInput
-              newMessageHandler={handleSendMessage}
-              recognition={speechRecognition}
-              onListeningChange={setIsListening}
-            />
-          </main>
-        </div>
-
-        <AnimatePresence>
-          {isSidebarOpen && (
-            <motion.div
-              initial={{ x: -300, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: -300, opacity: 0 }}
-              transition={{ duration: 0.3, ease: "easeInOut" }}
-              className="fixed inset-y-0 left-0 w-64 bg-white/80 dark:bg-zinc-800/80 backdrop-blur-sm border-r border-blue-100 dark:border-gray-700 z-30"
-            >
-              <div className="flex flex-col h-full">
-                <div className="p-4 border-b border-blue-100 dark:border-gray-700">
-                  <h2 className="text-lg font-bold flex items-center justify-between">
-                    Menu
-                    <span>
-                      <button
-                        className="p-2 rounded-full bg-gradient-to-r from-zinc-500 to-zinc-600 text-white shadow-lg shadow-zinc-500/20 hover:shadow-zinc-500/30 transition-all duration-200"
-                        aria-label="Toggle sidebar"
-                      >
-                        <X
-                          className="h-5 w-5"
-                          onClick={() => setIsSidebarOpen(false)}
-                        />
-                      </button>
-                    </span>
-                  </h2>
-                </div>
-                <div className="flex-1 p-4 space-y-2"></div>
-                <div className="p-4 border-t border-blue-100 dark:border-gray-700">
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    AI Assistant
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    );
+  return (
+    <div
+      className={`${inter.className} min-h-screen transition-colors duration-300 dark:bg-zinc-900 bg-zinc-300 flex flex-col`}
+    >
+      <SvgDefs />
+      <style>
+        {`.lucide-gradient-stroke path,
+.lucide-gradient-stroke line,
+.lucide-gradient-stroke polyline,
+.lucide-gradient-stroke circle,
+.lucide-gradient-stroke rect {
+  stroke: oklch(27.4% 0.006 286.033);
+  fill: url(#iconStrokeGradient);
+  .scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
+.scrollbar-thin::-webkit-scrollbar {
+  height: 8px; /* Height of horizontal scrollbar */
+  width: 8px;  /* Width of vertical scrollbar */
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb);
+  border-radius: 10px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background-color: var(--scrollbar-track);
+  border-radius: 10px;
+
+}
+`}
+      </style>
+      {!hasSeenOnboarding && (
+        <OnboardingScreen onComplete={handleOnboardingComplete} />
+      )}
+      {hasSeenOnboarding && (
+        <div className="max-w-7xl mx-auto p-4 md:p-6 lg:p-8 flex flex-col flex-grow w-full">
+          <NavBar
+            menuClickHandler={handleMenuClick}
+            currentView={currentViewIndex}
+          />
+          <div className="flex-grow flex flex-col mt-4 pb-8">
+            <div className="relative flex-grow w-full overflow-y-auto rounded-2xl p-4 sm:p-6">
+              {React.createElement(views[currentViewIndex].component)}
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Bottom Floating Navigation Bar */}
+      {hasSeenOnboarding && (
+        <div // This is the floating pill
+          className="fixed bottom-4 left-1/2 -translate-x-1/2 
+                     w-auto 
+                     bg-white/90 dark:bg-zinc-800/90 backdrop-blur-md 
+                     rounded-full 
+                     shadow-xl dark:shadow-2xl dark:shadow-black/30 
+                     p-1.5 sm:p-2 
+                     z-40"
+        >
+          <div className="flex justify-around items-center space-x-1 sm:space-x-2">
+            {" "}
+            {/* Container for buttons */}
+            {views.map((view, index) => (
+              <motion.button
+                key={view.id}
+                onClick={() => setViewIndex(index)}
+                className={`
+                    flex items-center justify-center 
+                    transition-all duration-300 focus:outline-none
+                    ${
+                      currentViewIndex === index
+                        ? "flex-row bg-gradient-to-t from-sky-500 to-lime-600 text-white rounded-full px-3 py-1.5 sm:px-4 sm:py-2 shadow-md h-10 sm:h-12"
+                        : "text-gray-500 dark:text-gray-400 hover:text-lime-600 dark:hover:text-lime-500 rounded-lg w-10 h-10 sm:w-12 sm:h-12"
+                    }
+                  `}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                {React.createElement(view.icon, {
+                  size: currentViewIndex === index ? 18 : 20,
+                  className: currentViewIndex === index ? "text-white" : "",
+                })}
+                {currentViewIndex === index && (
+                  <span className="ml-1.5 sm:ml-2 text-xs sm:text-sm font-medium">
+                    {view.name}
+                  </span>
+                )}
+              </motion.button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 export default App;
 // Zod Schema
 export const Schema = {
-  commentary:
-    'I will create a simple chatbot UI with a welcome page and a chat interface. The welcome page will have a fantasy-themed character illustration and a "Get Started" button to navigate to the chat page. The chat interface will support both text and voice input, and will display the conversation in a clean and interactive format.',
-  template: null,
-  title: "Chatbot UI",
-  description: "A simple chatbot UI with text and voice input.",
-  port: 3000,
-  file_path: "pages/index.tsx",
-  code: "<see code above>",
-  install_dependencies_command: "npm i motion lucide-react",
-  additional_dependencies: ["motion", "lucide-react"],
+  commentary: "",
+  template: "nextjs-developer",
+  title: "Fitness Ring App",
+  description:
+    "A responsive app for a wearable fitness ring that surfaces key daily health metrics, activity trends, and quick-access guides.",
+  additional_dependencies: ["lucide-react", "motion", "recharts"],
   has_additional_dependencies: true,
+  install_dependencies_command: "npm install motion lucide-react recharts",
+  port: 3000,
+  file_path: "app/page.tsx",
+  code: "<see code above>",
 };

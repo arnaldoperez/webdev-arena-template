@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,  ResponsiveContainer } from "recharts";
 import { Droplets, Footprints, Heart, Flame, Battery,  MapPin, Clock, TrendingUp, Check } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
@@ -63,7 +63,7 @@ const chartConfig = {
   },
 };
 
-const StatCard = ({ title, value, icon: Icon, color, trendUp }) => (
+const StatCard = ({ title, value, icon: Icon, color, trend, trendUp }) => (
   <motion.div
     className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-lg rounded-2xl p-4 flex items-start space-x-4 relative overflow-hidden group transition-all duration-300 hover:shadow-lg"
     whileHover={{ y: -2 }}
@@ -266,7 +266,7 @@ const ActivityChart = ({ data, selectedRange, onRangeChange }) => {
   );
 };
 
-const OnboardingScreen = ({ onComplete }: { onComplete: () => void }) => {
+const OnboardingScreen = ({ onComplete }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
 
   const nextSlide = () => {
@@ -276,7 +276,7 @@ const OnboardingScreen = ({ onComplete }: { onComplete: () => void }) => {
       onComplete();
     }
   };
-  
+
   const prevSlide = () => {
     if (currentSlide > 0) {
       setCurrentSlide(currentSlide - 1);
@@ -549,8 +549,6 @@ const TutorialScreen = ({ onComplete }) => {
     </motion.div>
   );
 };
-
-
 
 const App = () => {
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);

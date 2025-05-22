@@ -16,7 +16,6 @@ import {
   Heart,
   Flame,
   Battery,
-  TrendingUp,
   Activity,
   BarChart as BarCharIcon,
   Info,
@@ -24,6 +23,8 @@ import {
   Sun,
   FootprintsIcon,
   Clock,
+  ChevronLeft,
+  Menu,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
@@ -52,31 +53,6 @@ const onboardingSlides = [
   },
 ];
 
-const tutorialSlides = [
-  // These are now the instructions slides
-  {
-    icon: Droplets,
-    title: "Hydration Tracking",
-    description:
-      "Monitor your water intake throughout the day with smart reminders.",
-  },
-  {
-    icon: Footprints,
-    title: "Advanced Step Tracking",
-    description:
-      "Accurate step count with distance traveled and calories burned.",
-  },
-  {
-    icon: Heart,
-    title: "Continuous Heart Monitoring",
-    description: "Keep tabs on your heart rate and rhythm with built-in ECG.",
-  },
-  {
-    icon: Battery,
-    title: "Long Battery Life",
-    description: "Up to 5 days on a single charge with power-saving features.",
-  },
-];
 
 interface ChartEntry {
   day: string;
@@ -168,28 +144,6 @@ const StatCard = ({
   </motion.div>
 );
 
-const MiniChart = ({
-  data,
-  color,
-}: {
-  data: Array<{ value: number }>;
-  color: string;
-}) => (
-  <div className="w-24 h-12">
-    <ResponsiveContainer width="100%" height="100%">
-      <LineChart data={data}>
-        <Line
-          type="monotone"
-          dataKey="value"
-          stroke={color}
-          strokeWidth={2}
-          dot={false}
-        />
-      </LineChart>
-    </ResponsiveContainer>
-  </div>
-);
-
 const ActivityChart = ({
   data,
   selectedRange,
@@ -260,7 +214,7 @@ const DistanceCounter = ({
         </ResponsiveContainer>
       </div>
       <div className="flex-grow">
-      <p className="text-4xl  text-gray-700 dark:text-gray-200 font-bold transition-all duration-300 group-hover:scale-105">
+      <div className="text-4xl  text-gray-700 dark:text-gray-200 font-bold transition-all duration-300 group-hover:scale-105">
         2.9k
         <span className="ml-1 text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
           steps
@@ -268,7 +222,7 @@ const DistanceCounter = ({
       <p className="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
         Distance: 2.2 mi
       </p>
-      </p>
+      </div>
     </div>
     </motion.div>
   );
@@ -433,163 +387,6 @@ const OnboardingScreen = ({ onComplete }: { onComplete: () => void }) => {
   );
 };
 
-const TutorialScreen = ({ onComplete }: { onComplete: () => void }) => {
-  const [currentSlide, setCurrentSlide] = useState(0);
-
-  const nextSlide = () => {
-    if (currentSlide < tutorialSlides.length - 1) {
-      setCurrentSlide(currentSlide + 1);
-    } else {
-      onComplete();
-    }
-  };
-
-  const prevSlide = () => {
-    if (currentSlide > 0) {
-      setCurrentSlide(currentSlide - 1);
-    }
-  };
-
-  return (
-    <motion.div
-      className="fixed inset-0 bg-white dark:bg-zinc-900 z-50 flex items-center justify-center p-4"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0, transition: { duration: 0.3 } }}
-    >
-      <motion.div
-        className="bg-white dark:bg-zinc-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
-        initial={{ scale: 0.9, opacity: 0, y: 20 }}
-        animate={{ scale: 1, opacity: 1, y: 0 }}
-        exit={{ scale: 0.9, opacity: 0, y: 20, transition: { duration: 0.3 } }}
-        transition={{
-          type: "spring",
-          stiffness: 300,
-          damping: 25,
-          delay: 0.1,
-        }}
-      >
-        <div className="h-64 relative overflow-hidden">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentSlide}
-              className="absolute inset-0"
-              initial={{ opacity: 0, x: 100 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -100 }}
-              transition={{
-                duration: 0.5,
-                ease: [0.4, 0, 0.2, 1],
-              }}
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-lime-500 to-lime-600" />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-24 h-24 rounded-full bg-white/10 flex items-center justify-center">
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{
-                      delay: 0.2,
-                      duration: 0.5,
-                      type: "spring",
-                      stiffness: 260,
-                      damping: 20,
-                    }}
-                  >
-                    {React.createElement(tutorialSlides[currentSlide].icon, {
-                      className: "w-12 h-12 text-white",
-                    })}
-                  </motion.div>
-                </div>
-              </div>
-              <div className="absolute inset-0 opacity-10">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 100 100"
-                  preserveAspectRatio="none"
-                  className="w-full h-full"
-                >
-                  <path
-                    d="M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z"
-                    fill="currentColor"
-                  />
-                </svg>
-              </div>
-            </motion.div>
-          </AnimatePresence>
-        </div>
-        <div className="p-6">
-          <div className="mb-6 text-center">
-            <motion.h2
-              className="text-2xl font-bold text-gray-900 dark:text-white mb-2"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.5 }}
-            >
-              {tutorialSlides[currentSlide].title}
-            </motion.h2>
-            <motion.p
-              className="text-gray-600 dark:text-gray-300"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 0.5 }}
-            >
-              {tutorialSlides[currentSlide].description}
-            </motion.p>
-          </div>
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex space-x-2">
-              {tutorialSlides.map((_, index) => (
-                <motion.button
-                  key={index}
-                  className={`w-2 h-2 rounded-full transition-all duration-300 focus:outline-none ${
-                    index === currentSlide
-                      ? "bg-lime-500 w-4"
-                      : "bg-gray-300 dark:bg-gray-600"
-                  }`}
-                  onClick={() => setCurrentSlide(index)}
-                  whileHover={{ scale: 1.5 }}
-                  whileTap={{ scale: 0.8 }}
-                  aria-label={`Go to slide ${index + 1}`}
-                />
-              ))}
-            </div>
-            <motion.button
-              className="px-4 py-2 bg-lime-500 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500 focus:ring-offset-2 transition-all duration-200 shadow-lg"
-              onClick={nextSlide}
-              whileHover={{
-                scale: 1.05,
-                boxShadow: "0 10px 25px -5px rgba(132, 204, 2, 0.5)",
-              }}
-              whileTap={{ scale: 0.95 }}
-            >
-              {currentSlide < tutorialSlides.length - 1 ? "Next" : "Finish"}
-            </motion.button>
-          </div>
-          <div className="flex justify-between">
-            <motion.button
-              className={`px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500 focus:ring-offset-2 transition-all duration-200 ${
-                currentSlide === 0
-                  ? "text-gray-400 dark:text-gray-600 cursor-not-allowed"
-                  : "text-lime-500 hover:bg-lime-50 dark:hover:bg-lime-900/20"
-              }`}
-              onClick={prevSlide}
-              disabled={currentSlide === 0}
-              whileHover={currentSlide !== 0 ? { scale: 1.05 } : {}}
-              whileTap={currentSlide !== 0 ? { scale: 0.95 } : {}}
-            >
-              Back
-            </motion.button>
-            <div className="text-sm text-gray-500 dark:text-gray-400">
-              {currentSlide + 1} of {tutorialSlides.length}
-            </div>
-          </div>
-        </div>
-      </motion.div>
-    </motion.div>
-  );
-};
-
 const BatteryIndicator = ({ value }: { value: number }) => {
   return (
     <motion.div
@@ -621,36 +418,35 @@ const BatteryIndicator = ({ value }: { value: number }) => {
 };
 
 const NavBar = ({
-  showTutorial,
+  menuClickHandler,
   toggleDarkMode,
   isDarkMode,
+  currentView
 }: {
-  showTutorial: () => void;
+  menuClickHandler: () => void;
   toggleDarkMode: () => void;
   isDarkMode: boolean;
+  currentView:number
 }) => {
   return (
-    <div className="flex justify-between items-center mb-8">
-      <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-        Dashboard
-      </h1>
-      <div className="flex">
-        <motion.button
-          className={`px-4 py-2 mx-2 rounded-lg focus:outline-none focus:ring-2 transition-all duration-200 shadow-lg ${
+    <div className="flex justify-between items-start sm:items-center mb-8">
+      <motion.button
+          className={`p-2 sm:px-4 sm:py-2 rounded-full focus:outline-none focus:ring-2 transition-all duration-200 shadow-lg ${
             isDarkMode
-              ? "bg-lime-600 text-white focus:ring-lime-500 hover:bg-lime-500"
+              ? "bg-transparent text-white border-zinc-400 border-2 focus:ring-lime-500"
               : "bg-white text-lime-500 focus:ring-lime-500 hover:bg-lime-50"
           }`}
-          onClick={showTutorial}
+          onClick={menuClickHandler}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
-          Tutorial
+          {currentView==0 ? <Menu /> : <ChevronLeft />}
         </motion.button>
+      <div className="flex space-x-2">
         <motion.button
-          className={`px-4 py-2 rounded-lg focus:outline-none focus:ring-2 transition-all duration-200 shadow-lg ${
+          className={`p-2 sm:px-4 sm:py-2 rounded-lg focus:outline-none focus:ring-2 transition-all duration-200 shadow-lg ${
             isDarkMode
-              ? "bg-lime-600 text-white focus:ring-lime-500 hover:bg-lime-500"
+              ? "bg-transparent border-zinc-400 border-2 text-white focus:ring-lime-500 "
               : "bg-white text-lime-500 focus:ring-lime-500 hover:bg-lime-50"
           }`}
           onClick={toggleDarkMode}
@@ -659,49 +455,48 @@ const NavBar = ({
         >
           {isDarkMode ? <Sun /> : <Moon />}
         </motion.button>
+        <div className="flex flex-col ml-12 text-zinc-800 dark:text-zinc-400">
+          <p>Good morning</p>
+          <p>Jhon Doe</p>
+        </div>
+        <img className="w-10 h-10 ml-4 rounded-full" src="https://randomuser.me/api/portraits/men/61.jpg" alt="profile" />
       </div>
     </div>
   );
 };
 
-const Instruction=({title, category, picture}:{title:string,category:string, picture:string})=>{
-  return (<div style={{backgroundImage:picture}} className="flex flex-col p-4 bg-zinc-50 dark:bg-zinc-900/20 rounded-xl transition-all duration-300 hover:bg-zinc-100 dark:hover:bg-zinc-900/30 hover:scale-105">
-            <h3 className="text-sm font-medium text-lime-500 dark:text-lime-400 uppercase tracking-wider">
-              {title}
-            </h3>
-            <p className="text-3xl font-bold text-zinc-900 dark:text-white mt-2">
-              {category}
-            </p>
-          </div>)
+interface InstructionProps extends React.HTMLAttributes<HTMLDivElement> {
+  title: string;
+  category: string;
+  bgPicture: string;
 }
 
-const Stats = () => {
+const Instruction = ({ title, category, bgPicture}: InstructionProps) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-      <StatCard
-        title="Water Intake"
-        value="1.5"
-        unit="litres"
-        icon={Droplets}
-        fullHeight={true}
-      />
-      <StatCard
-        title="Step Count"
-        value="8,945"
-        unit="steps"
-        icon={Footprints}
-      />
-      <StatCard title="Heart Rate" value="72" unit="/min" icon={Heart} />
-      <StatCard title="Calories Burned" value="420" unit="kcal" icon={Flame} />
+    <div
+      style={{
+        backgroundImage: `url(${bgPicture})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
+      className="relative overflow-hidden rounded-xl shadow-lg h-36 w-48 sm:w-56 group transition-all duration-300 hover:scale-105 flex-shrink-0"
+    >
+      <div className="absolute bottom-0 left-0 right-0 px-3 pt-8 pb-3 bg-gradient-to-t from-white via-white/80 to-transparent dark:from-zinc-900 dark:via-zinc-900/80 dark:to-transparent">
+        <h3 className="text-sm font-medium text-lime-600 dark:text-lime-400 uppercase tracking-wider">
+          {title}
+        </h3>
+        <p className="text-2xl font-bold text-zinc-800 dark:text-zinc-100 mt-1 truncate">
+          {category}
+        </p>
+      </div>
     </div>
   );
-};
-
+}
 const ActivityResume = () => {
   const [selectedRange, setSelectedRange] = useState("week");
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-      <div className="grid grid-cols-2 grid-rows-3">
+    <div className="grid  grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <div className="grid gap-4 grid-cols-2 grid-rows-3">
         <StatCard
           icon={Droplets}
           title="Water"
@@ -729,8 +524,11 @@ const ActivityResume = () => {
         <h2 className="text-xl font-bold text-zinc-900 dark:text-white mb-4">
           How it works
         </h2>
-        <div className="grid grid-rows-1 grid-cols-2 overflow-x-auto md:grid-cols-3 gap-6">
-        {instructions.map((instruction, index )=>(<Instruction key={index} title={instruction.title} category={instruction.category} picture={`https://picsum.photos/seed/${index.toString()}/300/200`}  />))}          
+        {/* Container for scrollable instruction cards */}
+        <div style={{scrollbarWidth:"thin",scrollbarColor:"oklch(53.2% 0.157 131.589) #67e8f9"}} className="snap-x flex overflow-x-auto space-x-4 pb-2 scrollbar-thin scrollbar-thumb-lime-500 scrollbar-track-lime-200 dark:scrollbar-thumb-lime-600 dark:scrollbar-track-zinc-700">
+          {instructions.map((instruction, index) => (
+            <Instruction className="snap-center" key={index} title={instruction.title} category={instruction.category} bgPicture={`https://picsum.photos/seed/${(index + 1).toString()}/300/200`} />
+          ))}
         </div>
       </div>
     </div>
@@ -774,7 +572,7 @@ const Instructions = () => {
 const StepsBarChart = ({ data }: { data: ChartEntry[] }) => {
   const totalSteps = useMemo(() => {
     return data.reduce((current, day) => day.steps + current, 0);
-  }, []);
+  }, [data]);
   return (
     <div>
       <div className="flex justify-between items-center">
@@ -910,23 +708,6 @@ const views = [
   },
 ];
 
-const carouselVariants = {
-  enter: (direction: number) => ({
-    x: direction > 0 ? "100%" : "-100%",
-    opacity: 0,
-  }),
-  center: {
-    x: 0,
-    opacity: 1,
-    transition: { duration: 0.4, ease: "easeInOut" },
-  },
-  exit: (direction: number) => ({
-    x: direction < 0 ? "100%" : "-100%",
-    opacity: 0,
-    transition: { duration: 0.3, ease: "easeInOut" },
-  }),
-};
-
 // Component to define SVG gradients
 const SvgDefs = () => (
   <svg width="0" height="0" style={{ position: "absolute" }}>
@@ -950,17 +731,14 @@ const SvgDefs = () => (
   </svg>
 );
 
-const swipeThreshold = 75; // Min drag distance to trigger swipe
-
 const App = () => {
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
-  const [hasSeenTutorial, setHasSeenTutorial] = useState(false);
 
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isClient, setIsClient] = useState(false);
 
   // Carousel state: [index, direction]
-  const [[currentViewIndex, direction], setCurrentView] = useState([0, 0]);
+  const [currentViewIndex, setCurrentViewIndex] = useState(0);
 
   useEffect(() => {
     setIsClient(true);
@@ -970,7 +748,6 @@ const App = () => {
     ).matches;
     setIsDarkMode(prefersDark);
     setHasSeenOnboarding(localStorage.getItem("hasSeenOnboarding") == "true");
-    setHasSeenTutorial(localStorage.getItem("hasSeenTutorial") == "true");
   }, []);
 
   const handleOnboardingComplete = () => {
@@ -978,10 +755,6 @@ const App = () => {
     localStorage.setItem("hasSeenOnboarding", "true");
   };
 
-  const handleTutorialComplete = () => {
-    setHasSeenTutorial(true);
-    localStorage.setItem("hasSeenTutorial", "true");
-  };
 
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode);
@@ -991,21 +764,11 @@ const App = () => {
       document.documentElement.classList.remove("dark");
     }
   };
-
-  const paginate = (newDirection: number) => {
-    let nextIndex = currentViewIndex + newDirection;
-    if (nextIndex < 0) {
-      nextIndex = views.length - 1;
-    } else if (nextIndex >= views.length) {
-      nextIndex = 0;
-    }
-    setCurrentView([nextIndex, newDirection]);
-  };
-
+  const handleMenuClick = () => {
+    if(currentViewIndex!=0)setCurrentViewIndex(0)
+  }
   const setViewIndex = (index: number) => {
-    const newDirection =
-      index > currentViewIndex ? 1 : index < currentViewIndex ? -1 : 0;
-    setCurrentView([index, newDirection]);
+    setCurrentViewIndex(index);
   };
 
   if (!isClient) {
@@ -1037,73 +800,77 @@ const App = () => {
 .lucide-gradient-stroke rect {
   stroke: oklch(37% 0.013 285.805);
   fill: url(#iconStrokeGradient);
+  .scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+.scrollbar-thin::-webkit-scrollbar {
+  height: 8px; /* Height of horizontal scrollbar */
+  width: 8px;  /* Width of vertical scrollbar */
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb);
+  border-radius: 10px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background-color: var(--scrollbar-track);
+  border-radius: 10px;
+
 }`}
       </style>
       {!hasSeenOnboarding && (
         <OnboardingScreen onComplete={handleOnboardingComplete} />
       )}
-      {hasSeenOnboarding && !hasSeenTutorial && (
-        <TutorialScreen onComplete={handleTutorialComplete} />
-      )}
-      {hasSeenOnboarding && hasSeenTutorial && (
+      {hasSeenOnboarding && (
         <div className="max-w-7xl mx-auto p-4 md:p-6 lg:p-8 flex flex-col flex-grow w-full">
           <NavBar
-            showTutorial={() => setHasSeenTutorial(false)}
+          menuClickHandler={handleMenuClick}
             toggleDarkMode={toggleDarkMode}
             isDarkMode={isDarkMode}
+            currentView={currentViewIndex}
           />
-
-          <div className="flex justify-center items-center mb-4 space-x-6">
+          <div className="flex-grow flex flex-col mt-4 pb-8"> 
+            <div className="relative flex-grow w-full overflow-y-auto rounded-2xl shadow-xl bg-white/80 dark:bg-zinc-800/80 backdrop-blur-lg p-4 sm:p-6">
+              {React.createElement(views[currentViewIndex].component)}
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Bottom Floating Navigation Bar */}
+      {hasSeenOnboarding  && (
+        <div // This is the floating pill
+          className="fixed bottom-4 left-1/2 -translate-x-1/2 
+                     w-auto 
+                     bg-white/90 dark:bg-zinc-800/90 backdrop-blur-md 
+                     rounded-full 
+                     shadow-xl dark:shadow-2xl dark:shadow-black/30 
+                     p-1.5 sm:p-2 
+                     z-40"
+        >
+          <div className="flex justify-around items-center space-x-1 sm:space-x-2"> {/* Container for buttons */}
             {views.map((view, index) => (
               <motion.button
-                key={view.id}
-                onClick={() => setViewIndex(index)}
-                className={`p-2 flex rounded-lg transition-all duration-300 focus:outline-none ${
-                  currentViewIndex === index
-                    ? "bg-lime-500 text-white shadow-md"
-                    : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
-                }`}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-              >
-                {React.createElement(view.icon, { size: 24 })}
-                <span className="ml-2 text-sm font-semibold">
-                  {currentViewIndex === index ? view.name : ""}
-                </span>
-              </motion.button>
-            ))}
-          </div>
-
-          <div className="flex-grow flex flex-col mt-4 mb-4">
-            <div className="relative flex-grow w-full overflow-hidden rounded-lg shadow-lg bg-white/70 dark:bg-zinc-800/70 backdrop-blur-sm">
-              <AnimatePresence
-                initial={false}
-                custom={direction}
-                mode="popLayout"
-              >
-                <motion.div
-                  key={views[currentViewIndex].id}
-                  custom={direction}
-                  variants={carouselVariants}
-                  initial="enter"
-                  animate="center"
-                  exit="exit"
-                  drag="x"
-                  dragConstraints={{ left: 0, right: 0 }}
-                  dragElastic={0.25}
-                  onDragEnd={(event, { offset }) => {
-                    if (offset.x < -swipeThreshold) {
-                      paginate(1); // Swiped left, go to next
-                    } else if (offset.x > swipeThreshold) {
-                      paginate(-1); // Swiped right, go to prev
+                  key={view.id}
+                  onClick={() => setViewIndex(index)}
+                  className={`
+                    flex items-center justify-center 
+                    transition-all duration-300 focus:outline-none
+                    ${currentViewIndex === index
+                      ? "flex-row bg-gradient-to-t from-sky-500 to-lime-600 text-white rounded-full px-3 py-1.5 sm:px-4 sm:py-2 shadow-md h-10 sm:h-12"
+                      : "text-gray-500 dark:text-gray-400 hover:text-lime-600 dark:hover:text-lime-500 rounded-lg w-10 h-10 sm:w-12 sm:h-12"
                     }
-                  }}
-                  className="w-full h-full p-3 md:p-5" // Padding for content within slide
+                  `}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                 >
-                  {React.createElement(views[currentViewIndex].component)}
-                </motion.div>
-              </AnimatePresence>
-            </div>
+                  {React.createElement(view.icon, { size: currentViewIndex === index ? 18 : 20, className: currentViewIndex === index ? "text-white" : "" })}
+                  {currentViewIndex === index && (
+                    <span className="ml-1.5 sm:ml-2 text-xs sm:text-sm font-medium">
+                      {view.name}
+                    </span>
+                  )}
+                </motion.button>
+            ))}
           </div>
         </div>
       )}
