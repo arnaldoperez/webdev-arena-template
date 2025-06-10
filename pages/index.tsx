@@ -1,896 +1,795 @@
-import React, { useState, useEffect, useMemo } from "react";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Bar,
-  BarChart,
-} from "recharts";
-import {
-  Droplets,
-  Footprints,
-  Heart,
-  Flame,
-  Battery,
-  Activity,
-  BarChart as BarCharIcon,
-  Info,
-  FootprintsIcon,
-  Clock,
-  ChevronLeft,
-  Menu,
-  ChevronRightCircle,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
-import { Inter } from "next/font/google";
+//I'm looking for a website that showcases camera products with feature highlights, a photo gallery, product details, and a newsletter signup.
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
-const inter = Inter({ subsets: ["latin"] });
-
-const onboardingSlides = [
+const cameraProducts = [
   {
-    icon: Droplets,
-    title: "Track Your Hydration",
+    id: 1,
+    name: "Alpha Pro",
+    price: 2499,
+    image:
+      "https://images.pexels.com/photos/90946/pexels-photo-90946.jpeg?auto=compress&cs=tinysrgb&w=600",
     description:
-      "Monitor your water intake and stay hydrated throughout the day with personalized reminders.",
+      "Our most advanced camera featuring a 50MP sensor, 8K video recording, and a revolutionary autofocus system with real-time tracking.",
+    features: [
+      "50MP Full-Frame Sensor",
+      "8K 30fps & 4K 120fps Video",
+      "Real-time Animal & Human AF",
+      "10fps Burst Shooting",
+      "In-body Image Stabilization",
+      "Weather-resistant Construction",
+    ],
+    specs: {
+      sensor: "50MP Full-Frame CMOS",
+      iso: "100-102400 (expandable to 50-204800)",
+      burst: "10fps (mechanical shutter), 20fps (electronic)",
+      video: "8K @ 30fps, 4K @ 120fps",
+      screen: '3.2" Tilting Touchscreen (2,100,000 dots)',
+      battery: "Approx. 705 shots per charge",
+    },
+    gallery: [
+      "https://images.pexels.com/photos/90946/pexels-photo-90946.jpeg?auto=compress&cs=tinysrgb&w=600",
+      "https://images.pexels.com/photos/2333810/pexels-photo-2333810.jpeg?auto=compress&cs=tinysrgb&w=600",
+      "https://images.pexels.com/photos/31696056/pexels-photo-31696056/free-photo-of-canon-camera-lens-on-wooden-surface.jpeg?auto=compress&cs=tinysrgb&w=600",
+      "https://images.pexels.com/photos/31696075/pexels-photo-31696075/free-photo-of-professional-camera-equipment-setup-with-dslr-camera-lens-telephoto-lens-and-tripod-outdoors.jpeg?auto=compress&cs=tinysrgb&w=600",
+    ],
   },
   {
-    icon: Footprints,
-    title: "Activity Tracking",
+    id: 2,
+    name: "Quantum Mirror",
+    price: 1799,
+    image:
+      "https://images.pexels.com/photos/90946/pexels-photo-90946.jpeg?auto=compress&cs=tinysrgb&w=600",
     description:
-      "Record your steps, distance covered, and active time with our advanced motion sensors.",
+      "Compact mirrorless camera with a 42MP sensor, 4K video, and an innovative in-body stabilization system.",
+    features: [
+      "42MP APS-C Sensor",
+      "4K 30fps Video Recording",
+      "5-axis In-body Stabilization",
+      "15fps Burst Shooting",
+      "Real-time Eye AF",
+      "Fully Articulated Touchscreen",
+    ],
+    specs: {
+      sensor: "42MP APS-C CMOS",
+      iso: "100-51200 (expandable to 50-204800)",
+      burst: "15fps (mechanical), 20fps (electronic)",
+      video: "4K @ 30fps, Full HD @ 120fps",
+      screen: '3.0" Fully Articulated Touchscreen (1,040,000 dots)',
+      battery: "Approx. 500 shots per charge",
+    },
+    gallery: [
+      "https://images.pexels.com/photos/90946/pexels-photo-90946.jpeg?auto=compress&cs=tinysrgb&w=600",
+      "https://images.pexels.com/photos/90946/pexels-photo-90946.jpeg?auto=compress&cs=tinysrgb&w=600",
+      "https://images.pexels.com/photos/90946/pexels-photo-90946.jpeg?auto=compress&cs=tinysrgb&w=600",
+      "https://images.pexels.com/photos/90946/pexels-photo-90946.jpeg?auto=compress&cs=tinysrgb&w=600",
+    ],
   },
   {
-    icon: Heart,
-    title: "Heart Health",
+    id: 3,
+    name: "Photon X5",
+    price: 1299,
+    image:
+      "https://images.pexels.com/photos/90946/pexels-photo-90946.jpeg?auto=compress&cs=tinysrgb&w=600",
     description:
-      "Keep tabs on your heart rate and rhythm with our built-in ECG monitoring system.",
+      "Professional DSLR with a 24MP sensor, 4K video capabilities, and an advanced autofocus system.",
+    features: [
+      "24MP Full-Frame Sensor",
+      "4K UHD Video Recording",
+      "273-point Phase Detection AF",
+      "7fps Burst Shooting",
+      "ISO Range 100-51200",
+      "Built-in Wi-Fi & GPS",
+    ],
+    specs: {
+      sensor: "24MP Full-Frame CMOS",
+      iso: "100-51200 (expandable to 50-204800)",
+      burst: "7fps (mechanical), 10fps (continuous)",
+      video: "4K @ 30fps, Full HD @ 120fps",
+      screen: '3.2" Fixed Touchscreen (1,040,000 dots)',
+      battery: "Approx. 750 shots per charge",
+    },
+    gallery: [
+      "https://images.pexels.com/photos/90946/pexels-photo-90946.jpeg?auto=compress&cs=tinysrgb&w=600",
+      "https://images.pexels.com/photos/90946/pexels-photo-90946.jpeg?auto=compress&cs=tinysrgb&w=600",
+      "https://images.pexels.com/photos/90946/pexels-photo-90946.jpeg?auto=compress&cs=tinysrgb&w=600",
+      "https://images.pexels.com/photos/90946/pexels-photo-90946.jpeg?auto=compress&cs=tinysrgb&w=600",
+    ],
   },
 ];
 
-interface ChartEntry {
-  day: string;
-  steps: number;
-}
-const chartData: ChartEntry[] = [
-  { day: "Mon", steps: 12000 },
-  { day: "Tue", steps: 15000 },
-  { day: "Wed", steps: 8000 },
-  { day: "Thu", steps: 10000 },
-  { day: "Fri", steps: 13000 },
-  { day: "Sat", steps: 7000 },
-  { day: "Sun", steps: 9000 },
-];
-
-const chartConfig = {
-  steps: {
-    label: "Steps",
-    color: "#84cc16",
-  },
-};
-
-const instructionsData = [
+const features = [
   {
-    icon: Droplets,
-    title: "Hydration Tracking",
+    icon: "M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2z",
+    title: "Advanced Sensor Technology",
     description:
-      "Monitor your water intake throughout the day with smart reminders.",
+      "Cutting-edge sensors deliver exceptional image quality in all lighting conditions.",
   },
   {
-    icon: Footprints,
-    title: "Advanced Step Tracking",
+    icon: "M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2z",
+    title: "Precision Optics",
     description:
-      "Accurate step count with distance traveled and calories burned.",
+      "Premium lenses optimized for maximum sharpness and minimal distortion.",
   },
   {
-    icon: Heart,
-    title: "Continuous Heart Monitoring",
-    description: "Keep tabs on your heart rate and rhythm with built-in ECG.",
-  },
-  {
-    icon: Battery,
-    title: "Long Battery Life",
-    description: "Up to 5 days on a single charge with power-saving features.",
+    icon: "M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2z",
+    title: "Seamless Connectivity",
+    description:
+      "Built-in Wi-Fi and Bluetooth for easy sharing and remote control capabilities.",
   },
 ];
 
-const instructions = [
-  { title: "Power Indicators", category: "Guide" },
-  { title: "Wheather Forecast", category: "Tutorial" },
-  { title: "High Performance", category: "Support" },
+const galleryImages = [
+  "https://images.pexels.com/photos/90946/pexels-photo-90946.jpeg?auto=compress&cs=tinysrgb&w=600",
+  "https://images.pexels.com/photos/2333810/pexels-photo-2333810.jpeg?auto=compress&cs=tinysrgb&w=600",
+  "https://images.pexels.com/photos/31696056/pexels-photo-31696056/free-photo-of-canon-camera-lens-on-wooden-surface.jpeg?auto=compress&cs=tinysrgb&w=600",
+  "https://images.pexels.com/photos/31696075/pexels-photo-31696075/free-photo-of-professional-camera-equipment-setup-with-dslr-camera-lens-telephoto-lens-and-tripod-outdoors.jpeg?auto=compress&cs=tinysrgb&w=600",
 ];
-
-interface StatCardProps extends React.HTMLAttributes<HTMLDivElement> {
-  title: string;
-  value: string;
-  icon: LucideIcon;
-  unit: string;
-  fullHeight?: boolean;
-}
-const StatCard = ({
-  title,
-  value,
-  unit,
-  icon: Icon,
-  fullHeight = false,
-}: StatCardProps) => (
-  <motion.div
-    className={`${
-      fullHeight ? "h-full mb-2" : ""
-    } bg-zinc-800 backdrop-blur-lg rounded-2xl overflow-hidden flex items-start justify-between transition-all duration-300 hover:shadow-lg`}
-    whileHover={{ y: -2 }}
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.3 }}
-  >
-    <div className="flex-1 p-5">
-      <p className="text-sm font-medium text-gray-400 tracking-wider">
-        {title}
-      </p>
-      <p className="text-4xl text-gray-200 font-bold transition-all duration-300 group-hover:scale-105">
-        {value}
-        <span className="ml-1 text- sm font-medium text-gray-400">
-          {unit}
-        </span>
-      </p>
-    </div>
-
-    <div className="p-3 rounded-lg">
-      <Icon className="w-8 h-8 lucide-gradient-stroke" />
-    </div>
-  </motion.div>
-);
-
-const ActivityChart = ({
-  data,
-  selectedRange,
-}: {
-  data: ChartEntry[];
-  selectedRange: string;
-  onRangeChange: (range: string) => void;
-}) => {
-  const filteredData = data.slice(0, selectedRange === "week" ? 7 : 30);
-
-  return (
-    <motion.div
-      className="bg-zinc-800/90 backdrop-blur-lg rounded-2xl p-5 transition-all duration-300 hover:shadow-lg"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-    >
-      <div className="h-32">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart
-            data={filteredData}
-            margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
-          >
-            <defs>
-              <linearGradient id="colorSteps" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#bef264" stopOpacity={0.8} />
-                <stop offset="95%" stopColor="#67e8f9" stopOpacity={0.8} />
-              </linearGradient>
-            </defs>
-            <Line
-              type="monotone"
-              dataKey="steps"
-              stroke={chartConfig.steps.color}
-              fill="url(#colorSteps)"
-              strokeWidth={3}
-              name="Steps"
-            />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
-      <div className="flex-grow">
-        <p className="text-sm font-medium text-gray-400 tracking-wider">
-          Heat Rate
-        </p>
-        <p className="text-4xl text-gray-200 font-bold transition-all duration-300 group-hover:scale-105">
-          74
-          <span className="ml-1 text-sm font-medium text-gray-400 tracking-wider">
-            bpm
-          </span>
-        </p>
-      </div>
-    </motion.div>
-  );
-};
-
-const DistanceCounter = ({}) => {
-  return (
-    <motion.div
-      className="bg-zinc-800/90 backdrop-blur-lg rounded-2xl p-5 transition-all duration-300 hover:shadow-lg"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-    >
-      <div className="h-32">
-        <ResponsiveContainer className="p-6" width="100%" height="100%">
-          <Footprints className="rotate-90 lucide-gradient-stroke" />
-        </ResponsiveContainer>
-      </div>
-      <div className="flex-grow">
-        <div className="text-4xl  text-gray-200 font-bold transition-all duration-300 group-hover:scale-105">
-          2.9k
-          <span className="ml-1 text-sm font-medium text-gray-400 tracking-wider">
-            steps
-          </span>
-          <p className="text-sm font-medium text-gray-400 tracking-wider">
-            Distance: 2.2 mi
-          </p>
-        </div>
-      </div>
-    </motion.div>
-  );
-};
-
-const OnboardingScreen = ({ onComplete }: { onComplete: () => void }) => {
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [showSplash, setShowSplash] = useState(true)
-
-  useEffect(() => {
-    const timer= setTimeout(() => {
-      setShowSplash(false);
-    }, 3000);
-
-    return () => {
-      clearTimeout(timer);
-    };
-  }, [])
-
-  const nextSlide = () => {
-    if (currentSlide < onboardingSlides.length - 1) {
-      setCurrentSlide(currentSlide + 1);
-    } else {
-      onComplete();
-    }
-  };
-
-  const prevSlide = () => {
-    if (currentSlide > 0) {
-      setCurrentSlide(currentSlide - 1);
-    }
-  };
-
-  return (
-    <motion.div
-      className="fixed inset-0 bg-white dark:bg-zinc-900 z-50 flex items-center justify-center p-4"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0, transition: { duration: 0.3 } }}
-    >
-      {showSplash?<motion.div className="flex flex-column justify-between h-full w-full p-4">
-        <div className="flex justify-between w-full">
-          <h2 className="text-zinc-400 text-2xl">Meet</h2>
-          <ChevronRightCircle size={36} onClick={() => setShowSplash(false)} />
-        </div>
-      </motion.div>:
-      <motion.div
-        className="bg-white dark:bg-zinc-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
-        initial={{ scale: 0.9, opacity: 0, y: 20 }}
-        animate={{ scale: 1, opacity: 1, y: 0 }}
-        exit={{ scale: 0.9, opacity: 0, y: 20, transition: { duration: 0.3 } }}
-        transition={{
-          type: "spring",
-          stiffness: 300,
-          damping: 25,
-          delay: 0.1,
-        }}
-      >
-        <div className="h-64 relative overflow-hidden">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={currentSlide}
-              className="absolute inset-0"
-              initial={{ opacity: 0, x: 100 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -100 }}
-              transition={{
-                duration: 0.5,
-                ease: [0.4, 0, 0.2, 1],
-              }}
-            >
-              <div className="absolute inset-0 bg-gradient-to-br from-lime-500 to-lime-600" />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-24 h-24 rounded-full bg-white/10 flex items-center justify-center">
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{
-                      delay: 0.2,
-                      duration: 0.5,
-                      type: "spring",
-                      stiffness: 260,
-                      damping: 20,
-                    }}
-                  >
-                    {React.createElement(onboardingSlides[currentSlide].icon, {
-                      className: "w-12 h-12 text-white",
-                    })}
-                  </motion.div>
-                </div>
-              </div>
-              <div className="absolute inset-0 opacity-10">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 100 100"
-                  preserveAspectRatio="none"
-                  className="w-full h-full"
-                >
-                  <path
-                    d="M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z"
-                    fill="currentColor"
-                  />
-                </svg>
-              </div>
-            </motion.div>
-          </AnimatePresence>
-        </div>
-        <div className="p-6">
-          <div className="mb-6 text-center">
-            <motion.h2
-              className="text-2xl font-bold text-gray-900 dark:text-white mb-2"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.5 }}
-            >
-              {onboardingSlides[currentSlide].title}
-            </motion.h2>
-            <motion.p
-              className="text-gray-600 dark:text-gray-300"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 0.5 }}
-            >
-              {onboardingSlides[currentSlide].description}
-            </motion.p>
-          </div>
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex space-x-2">
-              {onboardingSlides.map((_, index) => (
-                <motion.button
-                  key={index}
-                  className={`w-2 h-2 rounded-full transition-all duration-300 focus:outline-none ${
-                    index === currentSlide
-                      ? "bg-lime-500 w-4"
-                      : "bg-gray-300 dark:bg-gray-600"
-                  }`}
-                  onClick={() => setCurrentSlide(index)}
-                  whileHover={{ scale: 1.5 }}
-                  whileTap={{ scale: 0.8 }}
-                  aria-label={`Go to slide ${index + 1}`}
-                />
-              ))}
-            </div>
-            <motion.button
-              className="px-4 py-2 bg-lime-500 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500 focus:ring-offset-2 transition-all duration-200 shadow-lg"
-              onClick={nextSlide}
-              whileHover={{
-                scale: 1.05,
-                boxShadow: "0 10px 25px -5px rgba(132, 204, 2, 0.5)",
-              }}
-              whileTap={{ scale: 0.95 }}
-            >
-              {currentSlide < onboardingSlides.length - 1
-                ? "Next"
-                : "Get Started"}
-            </motion.button>
-          </div>
-          <div className="flex justify-between">
-            <motion.button
-              className={`px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-500 focus:ring-offset-2 transition-all duration-200 ${
-                currentSlide === 0
-                  ? "text-gray-400 dark:text-gray-600 cursor-not-allowed"
-                  : "text-lime-500 hover:bg-lime-50 dark:hover:bg-lime-900/20"
-              }`}
-              onClick={prevSlide}
-              disabled={currentSlide === 0}
-              whileHover={currentSlide !== 0 ? { scale: 1.05 } : {}}
-              whileTap={currentSlide !== 0 ? { scale: 0.95 } : {}}
-            >
-              Back
-            </motion.button>
-            <div className="text-sm text-gray-500 dark:text-gray-400">
-              {currentSlide + 1} of {onboardingSlides.length}
-            </div>
-          </div>
-        </div>
-      </motion.div>
-}
-    </motion.div>
-  );
-};
-
-const BatteryIndicator = ({ value }: { value: number }) => {
-  return (
-    <motion.div
-      className="h-full flex flex-col justify-between items-center bg-white/90 dark:bg-zinc-800/90 rounded-lg p-3 text-center group transition-all duration-200 hover:shadow-lg"
-      whileHover={{ y: -2 }}
-    >
-      <div className="text-gray-500 drop-shadow-sm">
-        <p className="text-lg  font-semibold dark:text-gray-100 ">
-        {value}%
-      </p>
-      <p className="text-xs dark:text-gray-200">
-        Battery
-      </p>
-      </div>
-
-      <motion.div
-        className="w-full h-32 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-end relative overflow-hidden group transition-all duration-300 hover:shadow-md"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-      >
-        <motion.div
-          className="absolute left-0 w-full bg-zinc-500 rounded-lg" // Green progress
-          initial={{ height: 0 }}
-          animate={{ height: `${value}%` }}
-          transition={{ duration: 1, ease: "easeInOut" }}
-        />
-      </motion.div>
-    </motion.div>
-  );
-};
-
-const NavBar = ({
-  menuClickHandler,
-  currentView,
-}: {
-  menuClickHandler: () => void;
-  currentView: number;
-}) => {
-  return (
-    <div className="flex justify-between items-start sm:items-center mb-8">
-      <motion.button
-        className="p-2 sm:px-4 sm:py-2 rounded-full hover:outline-none hover:ring-2 border-2 transition-all duration-200 bg-transparent dark:text-zinc-400 dark:border-zinc-400 dark:hover:ring-lime-400 text-zinc-700 border-zinc-800 hover:ring-lime-700"
-        onClick={menuClickHandler}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-      >
-        {currentView == 0 ? <Menu /> : <ChevronLeft />}
-      </motion.button>
-      <div className={`flex space-x-2 dark:text-zinc-400 text-zinc-800`}>
-        <div className="flex flex-col ml-12">
-          <p className="text-xs font-medium">Good morning</p>
-          <p className="font-bold">Jhon Doe</p>
-        </div>
-        <img
-          className="w-10 h-10 ml-4 rounded-full"
-          src="https://randomuser.me/api/portraits/men/61.jpg"
-          alt="profile"
-        />
-      </div>
-    </div>
-  );
-};
-
-interface InstructionProps extends React.HTMLAttributes<HTMLDivElement> {
-  title: string;
-  category: string;
-  bgPicture: string;
-}
-
-const Instruction = ({ title, category, bgPicture }: InstructionProps) => {
-  return (
-    <div
-      style={{
-        backgroundImage: `url(${bgPicture})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
-      className="relative overflow-hidden rounded-xl shadow-lg h-48 w-40 group transition-all duration-300 hover:scale-105 flex-shrink-0"
-    >
-      <div className="absolute bottom-0 left-0 right-0 px-3 pt-8 pb-3 bg-gradient-to-t from-zinc-900 dark:via-zinc-900/80 dark:to-transparent">
-        <h3 className="text-xs font-bold tracking-wider">{title}</h3>
-        <p className="text-xs text-zinc-100 mt-1 truncate">{category}</p>
-      </div>
-    </div>
-  );
-};
-
-const ActivityResume = () => {
-  const [selectedRange, setSelectedRange] = useState("week");
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-      <div className="grid gap-4 grid-cols-2 grid-flow-row">
-        <h2
-          style={{ fontSize: "1.5rem" }}
-          className="t2 font-bold text-zinc-900 dark:text-zinc-300 col-span-2"
-        >
-          Your Metrics
-        </h2>
-        <StatCard
-          icon={Droplets}
-          title="Water"
-          value="1.5"
-          unit="litres"
-        ></StatCard>
-        <div className="row-span-2">
-          <DistanceCounter />
-        </div>
-        <div className="row-span-2">
-          <ActivityChart
-            data={chartData}
-            selectedRange={selectedRange}
-            onRangeChange={setSelectedRange}
-          />
-        </div>
-        <StatCard
-          icon={Flame}
-          title="Calories"
-          value="3.2K"
-          unit="cal"
-        ></StatCard>
-      </div>
-      <div className="backdrop-blur-lg rounded-2xl transition-all duration-300 hover:shadow-lg">
-        <h2
-          style={{ fontSize: "1.5rem" }}
-          className="font-bold text-white mb-4"
-        >
-          How it works
-        </h2>
-        {/* Container for scrollable instruction cards */}
-        <div
-          style={{
-            scrollbarWidth: "thin",
-            scrollbarColor:
-              "oklch(53.2% 0.157 131.589) oklch(27.4% 0.006 286.033)",
-          }}
-          className="snap-x flex overflow-x-auto space-x-4 pb-2 scrollbar-thin scrollbar-thumb-lime-500 scrollbar-track-lime-200 dark:scrollbar-thumb-lime-600 dark:scrollbar-track-zinc-700"
-        >
-          {instructions.map((instruction, index) => (
-            <Instruction
-              className="snap-center"
-              key={index}
-              title={instruction.title}
-              category={instruction.category}
-              bgPicture={`https://picsum.photos/seed/${(
-                index + 1
-              ).toString()}/300/200`}
-            />
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const Instructions = () => {
-  return (
-    <div className="bg-white/90 dark:bg-zinc-800/90 backdrop-blur-lg rounded-2xl p-6 transition-all duration-300 hover:shadow-lg">
-      <h2
-        style={{ fontSize: "1.5rem" }}
-        className="font-bold text-gray-900 dark:text-white mb-4"
-      >
-        How It Works
-      </h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {instructionsData.map((feature, index) => (
-          <motion.div
-            key={index}
-            className="flex flex-col p-4 bg-zinc-50 dark:bg-zinc-800 rounded-xl transition-all duration-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:scale-105"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-            whileHover={{ y: -5 }}
-          >
-            <div className="flex items-center space-x-3 mb-3">
-              <div className="text-lime-500 dark:text-lime-400">
-                <feature.icon className="w-5 h-5" />
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                {feature.title}
-              </h3>
-            </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              {feature.description}
-            </p>
-          </motion.div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-const StepsBarChart = ({ data }: { data: ChartEntry[] }) => {
-  const totalSteps = useMemo(() => {
-    return data.reduce((current, day) => day.steps + current, 0);
-  }, [data]);
-  return (
-    <div>
-      <div className="flex justify-between items-center">
-        <div>
-          <h2
-            style={{ fontSize: "1.5rem" }}
-            className="mb-2 font-bold text-zinc-900 dark:text-white"
-          >
-            My Activity
-          </h2>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            Total Steps
-          </p>
-          <h2
-            style={{ fontSize: "1.4rem" }}
-            className="mb-2 font-bold text-zinc-900 dark:text-white"
-          >
-            {totalSteps}
-          </h2>
-        </div>
-        <motion.select className="h-10 p-2 rounded-full border-2 text-zinc-500 border-zinc-100 border-zinc-800 bg-zinc-400 dark:text-zinc-200 dark:border-zinc-500 dark:bg-zinc-700">
-          <option value="week">This week</option>
-          <option value="month">This month</option>
-        </motion.select>
-      </div>
-      <motion.div
-        className="bg-white/90 h-96 dark:bg-zinc-800/90 backdrop-blur-lg rounded-2xl p-6 transition-all duration-300 hover:shadow-lg border-2 border-zinc-100 dark:border-zinc-700" // Removed h-full, flex, flex-col
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-      >
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            data={data}
-            margin={{ top: 5, right: 10, left: -20, bottom: 5 }}
-          >
-            <defs>
-              <linearGradient id="stepsBarGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#bef264" stopOpacity={0.8} />
-                <stop offset="95%" stopColor="#67e8f9" stopOpacity={0.8} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid
-              strokeDasharray="3 3"
-              vertical={false}
-              strokeOpacity={0.2}
-              stroke={chartConfig.steps.color}
-            />
-            <XAxis
-              dataKey="day"
-              axisLine={false}
-              tickLine={false}
-              tick={{ fill: "#9CA3AF", fontSize: 12 }}
-              dy={10}
-            />
-            <YAxis
-              axisLine={false}
-              tickLine={false}
-              tick={{ fill: "#9CA3AF", fontSize: 12 }}
-              dx={-10}
-              tickFormatter={(value) =>
-                value >= 1000 ? `${value / 1000}k` : value.toString()
-              }
-            />
-            <Tooltip
-              content={({ active, payload, label }) => {
-                if (active && payload && payload.length) {
-                  return (
-                    <motion.div
-                      className="bg-white dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700 rounded-lg p-3 shadow-lg backdrop-blur-sm"
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                    >
-                      <p
-                        className="font-bold text-zinc-900 dark:text-white"
-                        style={{ color: chartConfig.steps.color }}
-                      >
-                        {label}
-                      </p>
-                      <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
-                        Steps:{" "}
-                        {payload[0].value
-                          ?.toString()
-                          .replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
-                      </p>
-                    </motion.div>
-                  );
-                }
-                return null;
-              }}
-              cursor={{ fill: "rgba(132, 204, 2, 0.1)" }} // Light lime for cursor
-              wrapperStyle={{ outline: "none" }}
-            />
-            <Bar
-              dataKey="steps"
-              fill="url(#stepsBarGradient)"
-              background={{ fill: "rgba(0, 0, 0, 0.2)", radius: 17.5 }}
-              radius={17.5}
-              barSize={35}
-            />
-          </BarChart>
-        </ResponsiveContainer>
-      </motion.div>
-      <div className="flex p-4 gap-4">
-        <div className="grow flex gap-4 flex-col">
-          <StatCard
-            icon={FootprintsIcon}
-            title="Distance"
-            value="5.2"
-            unit="km"
-          />
-          <StatCard icon={Clock} title="time" value="19.2" unit="hours" />
-        </div>
-        <div className="w-md">
-          <BatteryIndicator value={65} />
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const views = [
-  {
-    name: "Activity",
-    component: ActivityResume,
-    id: "activity",
-    icon: Activity,
-  },
-  {
-    name: "Steps Chart",
-    component: () => <StepsBarChart data={chartData} />,
-    id: "stepsbarchart",
-    icon: BarCharIcon,
-  },
-  {
-    name: "How It Works",
-    component: Instructions,
-    id: "howitworks",
-    icon: Info,
-  },
-];
-
-
-const SvgDefs = () => (
-  <svg width="0" height="0" style={{ position: "absolute" }}>
-    <defs>
-      <linearGradient
-        id="iconStrokeGradient"
-        x1="0%"
-        y1="0%"
-        x2="100%"
-        y2="100%"
-      >
-        <stop offset="0%" style={{ stopColor: "#84cc16", stopOpacity: 1 }} />{" "}
-        <stop offset="100%" style={{ stopColor: "#22d3ee", stopOpacity: 1 }} />
-      </linearGradient>
-    </defs>
-  </svg>
-);
 
 const App = () => {
-  const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
+  const [showProductModal, setShowProductModal] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [showNewsletterModal, setShowNewsletterModal] = useState(false);
+  const [email, setEmail] = useState("");
+  const [showAlert, setShowAlert] = useState(false);
+  const [activeTab, setActiveTab] = useState("details");
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const openProductModal = (product: any) => {
+    setSelectedProduct(product);
+    setShowProductModal(true);
+  };
 
-  // Carousel state: [index, direction]
-  const [currentViewIndex, setCurrentViewIndex] = useState(0);
+  const closeProductModal = () => {
+    setShowProductModal(false);
+    setTimeout(() => {
+      setSelectedProduct(null);
+      setActiveTab("details");
+      setCurrentImageIndex(0);
+    }, 300);
+  };
 
-  useEffect(() => {
-    const prefersDark = window.matchMedia(
-      "(prefers-color-scheme: dark)"
-    ).matches;
-    setIsDarkMode(prefersDark);
-    const systemDarkMode = window.matchMedia(
-      "(prefers-color-scheme: dark)"
-    ).matches;
-    setIsDarkMode(systemDarkMode);
-  }, []);
+  const openNewsletterModal = () => {
+    setShowNewsletterModal(true);
+  };
 
-  useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
+  const closeNewsletterModal = () => {
+    setShowNewsletterModal(false);
+    setEmail("");
+  };
+
+  const handleSubscribe = () => {
+    if (email.includes("@")) {
+      setShowAlert(true);
+      setEmail("");
+      setTimeout(() => {
+        setShowAlert(false);
+        closeNewsletterModal();
+      }, 2000);
     }
-  }, [isDarkMode]);
-
-  const handleOnboardingComplete = () => {
-    setHasSeenOnboarding(true);
   };
 
-  const handleMenuClick = () => {
-    if (currentViewIndex != 0) setCurrentViewIndex(0);
-  };
-  const setViewIndex = (index: number) => {
-    setCurrentViewIndex(index);
+  const tabVariants = {
+    hidden: { opacity: 0, y: 10 },
+    visible: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: -10 },
   };
 
   return (
-    <div
-      className={`${inter.className} min-h-screen transition-colors duration-300 dark:bg-zinc-900 bg-zinc-300 flex flex-col`}
-    >
-      <SvgDefs />
-      <style>
-        {`.lucide-gradient-stroke path,
-.lucide-gradient-stroke line,
-.lucide-gradient-stroke polyline,
-.lucide-gradient-stroke circle,
-.lucide-gradient-stroke rect {
-  stroke: oklch(27.4% 0.006 286.033);
-  fill: url(#iconStrokeGradient);
-  .scrollbar-thin {
-  scrollbar-width: thin;
-  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
-}
-.scrollbar-thin::-webkit-scrollbar {
-  height: 8px; /* Height of horizontal scrollbar */
-  width: 8px;  /* Width of vertical scrollbar */
-}
-.scrollbar-thin::-webkit-scrollbar-thumb {
-  background-color: var(--scrollbar-thumb);
-  border-radius: 10px;
-}
-.scrollbar-thin::-webkit-scrollbar-track {
-  background-color: var(--scrollbar-track);
-  border-radius: 10px;
-
-}
-`}
-      </style>
-      {!hasSeenOnboarding && (
-        <OnboardingScreen onComplete={handleOnboardingComplete} />
-      )}
-      {hasSeenOnboarding && (
-        <div className="max-w-7xl mx-auto p-4 md:p-6 lg:p-8 flex flex-col flex-grow w-full">
-          <NavBar
-            menuClickHandler={handleMenuClick}
-            currentView={currentViewIndex}
-          />
-          <div className="flex-grow flex flex-col mt-4 pb-8">
-            <div className="relative flex-grow w-full overflow-y-auto rounded-2xl p-4 sm:p-6">
-              {React.createElement(views[currentViewIndex].component)}
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 text-white">
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+        <header className="mb-12 text-center relative">
+          <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
+            <div className="absolute top-0 right-0 w-96 h-96 bg-teal-400 rounded-full filter blur-3xl animate-pulse"></div>
+            <div className="absolute bottom-0 left-0 w-72 h-72 bg-purple-500 rounded-full filter blur-3xl animate-pulse delay-2000"></div>
           </div>
+
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold mb-3 bg-clip-text text-transparent bg-gradient-to-r from-teal-400 to-purple-500 relative z-10">
+              Vision Pro Cameras
+            </h1>
+          </motion.div>
+
+          <motion.p
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+            className="text-lg md:text-xl max-w-2xl mx-auto text-slate-300 relative z-10"
+          >
+            Professional cameras for creators who demand the absolute best.
+          </motion.p>
+        </header>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+          {cameraProducts.map((product, index) => (
+            <motion.div
+              key={product.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+              whileHover={{ y: -10 }}
+              className="bg-slate-800 rounded-xl overflow-hidden shadow-2xl hover:shadow-teal-500/20 transition-all duration-300 group relative"
+            >
+              <div className="relative overflow-hidden h-56">
+                <img
+                  src={product.image || "/placeholder.svg"}
+                  alt={product.name}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-between p-4">
+                  <div className="flex space-x-2">
+                    <span className="bg-teal-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                      New
+                    </span>
+                    <span className="bg-purple-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                      Pro
+                    </span>
+                  </div>
+                  <p className="text-white text-lg font-bold">
+                    ${product.price}
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-6">
+                <h3 className="text-xl font-bold mb-2 text-white group-hover:text-teal-400 transition-colors duration-300">
+                  {product.name}
+                </h3>
+                <p className="text-slate-400 mb-4 text-sm line-clamp-2">
+                  {product.description}
+                </p>
+
+                <div className="mb-4">
+                  <ul className="text-xs text-slate-300 space-y-1">
+                    {product.features.slice(0, 3).map((feature, i) => (
+                      <li key={i} className="flex items-center">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-3 w-3 text-teal-400 mr-2"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M5 13l4 4L19 7"
+                          />
+                        </svg>
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="flex justify-between items-center">
+                  <button
+                    onClick={() => openProductModal(product)}
+                    className="bg-teal-500 hover:bg-teal-600 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg shadow-teal-500/20"
+                  >
+                    View Details
+                  </button>
+                  <button className="text-slate-400 hover:text-white transition-colors duration-300 flex items-center">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5 mr-1"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                      />
+                    </svg>
+                    Save
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          ))}
         </div>
-      )}
-      {/* Bottom Floating Navigation Bar */}
-      {hasSeenOnboarding && (
-        <div // This is the floating pill
-          className="fixed bottom-4 left-1/2 -translate-x-1/2 
-                     w-auto 
-                     bg-white/90 dark:bg-zinc-800/90 backdrop-blur-md 
-                     rounded-full 
-                     shadow-xl dark:shadow-2xl dark:shadow-black/30 
-                     p-1.5 sm:p-2 
-                     z-40"
-        >
-          <div className="flex justify-around items-center space-x-1 sm:space-x-2">
-            {" "}
-            {/* Container for buttons */}
-            {views.map((view, index) => (
-              <motion.button
-                key={view.id}
-                onClick={() => setViewIndex(index)}
-                className={`
-                    flex items-center justify-center 
-                    transition-all duration-300 focus:outline-none
-                    ${
-                      currentViewIndex === index
-                        ? "flex-row bg-gradient-to-t from-sky-500 to-lime-600 text-white rounded-full px-3 py-1.5 sm:px-4 sm:py-2 shadow-md h-10 sm:h-12"
-                        : "text-gray-500 dark:text-gray-400 hover:text-lime-600 dark:hover:text-lime-500 rounded-lg w-10 h-10 sm:w-12 sm:h-12"
-                    }
-                  `}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+
+        <div className="mb-16">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="text-center mb-12"
+          >
+            <h2 className="text-3xl font-bold mb-3 bg-clip-text text-transparent bg-gradient-to-r from-teal-400 to-purple-500">
+              Our Promise
+            </h2>
+            <p className="text-slate-300 max-w-2xl mx-auto">
+              Vision Pro is committed to delivering the highest quality imaging
+              experience through innovation, precision engineering, and
+              exceptional customer support.
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {features.map((feature, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                whileHover={{ y: -5 }}
+                className="bg-slate-800 rounded-xl p-8 shadow-xl hover:shadow-teal-500/10 transition-all duration-300 relative overflow-hidden"
               >
-                {React.createElement(view.icon, {
-                  size: currentViewIndex === index ? 18 : 20,
-                  className: currentViewIndex === index ? "text-white" : "",
-                })}
-                {currentViewIndex === index && (
-                  <span className="ml-1.5 sm:ml-2 text-xs sm:text-sm font-medium">
-                    {view.name}
-                  </span>
-                )}
-              </motion.button>
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-teal-400 to-purple-500"></div>
+
+                <div className="mb-4">
+                  <div className="w-16 h-16 bg-teal-500/10 rounded-full flex items-center justify-center mx-auto">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-8 w-8 text-teal-400"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d={feature.icon}
+                      />
+                    </svg>
+                  </div>
+                </div>
+
+                <h3 className="text-xl font-bold mb-2 text-white">
+                  {feature.title}
+                </h3>
+                <p className="text-slate-400">{feature.description}</p>
+              </motion.div>
             ))}
           </div>
         </div>
-      )}
+
+        <div className="mb-16">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="text-center mb-8"
+          >
+            <h2 className="text-3xl font-bold mb-3 bg-clip-text text-transparent bg-gradient-to-r from-teal-400 to-purple-500">
+              The Vision Pro Gallery
+            </h2>
+            <p className="text-slate-300 max-w-2xl mx-auto">
+              Professional photography captured with our advanced camera systems
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+            {galleryImages.slice(0, 4).map((img, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: index * 0.05 }}
+                whileHover={{ y: -5, scale: 1.03 }}
+                className="relative overflow-hidden rounded-xl shadow-xl"
+              >
+                <img
+                  src={img || "/placeholder.svg"}
+                  alt={`Gallery image ${index + 1}`}
+                  className="w-full h-64 object-cover"
+                />
+              </motion.div>
+            ))}
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            whileHover={{ scale: 1.03 }}
+            className="relative overflow-hidden rounded-xl shadow-xl max-w-4xl mx-auto"
+          >
+            <img
+              src={galleryImages[4] || "/placeholder.svg"}
+              alt="Featured gallery image"
+              className="w-full h-96 object-cover"
+            />
+          </motion.div>
+        </div>
+
+        <div className="mb-16 bg-slate-800 rounded-xl p-8 shadow-2xl relative overflow-hidden">
+          <div className="absolute inset-0 opacity-5 pointer-events-none">
+            <div className="w-full h-full bg-[url('/noise.png')]"></div>
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="text-center mb-8 relative z-10"
+          >
+            <h2 className="text-3xl font-bold mb-3 bg-clip-text text-transparent bg-gradient-to-r from-teal-400 to-purple-500">
+              Stay Updated
+            </h2>
+            <p className="text-slate-300 max-w-2xl mx-auto">
+              Subscribe to our newsletter for the latest in camera technology,
+              tutorials, and exclusive offers.
+            </p>
+          </motion.div>
+
+          <div className="max-w-md mx-auto relative z-10">
+            <div className="flex shadow-xl">
+              <input
+                type="email"
+                placeholder="Enter your email"
+                className="flex-1 px-4 py-3 rounded-l-lg bg-slate-700 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all duration-300"
+              />
+              <button
+                onClick={openNewsletterModal}
+                className="bg-teal-500 hover:bg-teal-600 text-white font-medium px-6 py-3 rounded-r-lg transition-all duration-300 hover:shadow-lg hover:shadow-teal-500/20"
+              >
+                Subscribe
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <footer className="text-center text-slate-400 text-sm">
+          <p>&copy; {new Date().getFullYear()} Vision Pro Cameras</p>
+        </footer>
+
+        <AnimatePresence>
+          {showProductModal && selectedProduct && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4"
+              onClick={closeProductModal}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="bg-slate-900 rounded-xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl relative"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-teal-400 to-purple-500"></div>
+
+                <div className="flex flex-col lg:flex-row">
+                  <div className="lg:w-1/2 relative">
+                    <div className="absolute top-4 right-4 z-10 flex space-x-2">
+                      <button
+                        onClick={closeProductModal}
+                        className="bg-black bg-opacity-50 text-white rounded-full p-2 hover:bg-opacity-80 transition-all duration-300"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-6 w-6"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+
+                    <div className="relative h-64 lg:h-full">
+                      <img
+                        src={
+                          selectedProduct.gallery[currentImageIndex] ||
+                          "/placeholder.svg"
+                        }
+                        alt={`${selectedProduct.name} gallery`}
+                        className="w-full h-full object-cover"
+                      />
+
+                      {currentImageIndex > 0 && (
+                        <button
+                          onClick={() =>
+                            setCurrentImageIndex(currentImageIndex - 1)
+                          }
+                          className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white rounded-full p-2 hover:bg-opacity-80 transition-all duration-300"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-5 w-5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M15 19l-7-7 7-7"
+                            />
+                          </svg>
+                        </button>
+                      )}
+
+                      {currentImageIndex <
+                        selectedProduct.gallery.length - 1 && (
+                        <button
+                          onClick={() =>
+                            setCurrentImageIndex(currentImageIndex + 1)
+                          }
+                          className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white rounded-full p-2 hover:bg-opacity-80 transition-all duration-300"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-5 w-5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M9 5l7 7-7 7"
+                            />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="lg:w-1/2 p-6 lg:p-8 overflow-y-auto">
+                    <h2 className="text-2xl lg:text-3xl font-bold mb-2 text-white">
+                      {selectedProduct.name}
+                    </h2>
+                    <p className="text-2xl font-bold text-teal-400 mb-4">
+                      ${selectedProduct.price}
+                    </p>
+                    <p className="text-slate-300 mb-6">
+                      {selectedProduct.description}
+                    </p>
+
+                    <div className="flex border-b border-slate-700 mb-6">
+                      <button
+                        onClick={() => setActiveTab("details")}
+                        className={`pb-4 pt-2 mr-8 font-medium ${
+                          activeTab === "details"
+                            ? "text-teal-400 border-b-2 border-teal-400"
+                            : "text-slate-400 hover:text-white"
+                        }`}
+                      >
+                        Details
+                      </button>
+                      <button
+                        onClick={() => setActiveTab("specs")}
+                        className={`pb-4 pt-2 font-medium ${
+                          activeTab === "specs"
+                            ? "text-teal-400 border-b-2 border-teal-400"
+                            : "text-slate-400 hover:text-white"
+                        }`}
+                      >
+                        Specifications
+                      </button>
+                    </div>
+
+                    <div className="relative h-64">
+                      <AnimatePresence mode="wait">
+                        {activeTab === "details" && (
+                          <motion.div
+                            key="details"
+                            variants={tabVariants}
+                            initial="hidden"
+                            animate="visible"
+                            exit="exit"
+                            transition={{ duration: 0.3 }}
+                            className="absolute top-0 left-0 w-full"
+                          >
+                            <h3 className="text-lg font-bold mb-4 text-white">
+                              Key Features
+                            </h3>
+                            <ul className="space-y-3 mb-6">
+                              {selectedProduct.features.map(
+                                (feature: any, index: any) => (
+                                  <li key={index} className="flex items-start">
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      className="h-5 w-5 text-teal-400 mr-2 flex-shrink-0 mt-0.5"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                      stroke="currentColor"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M5 13l4 4L19 7"
+                                      />
+                                    </svg>
+                                    <span className="text-slate-300">
+                                      {feature}
+                                    </span>
+                                  </li>
+                                )
+                              )}
+                            </ul>
+                          </motion.div>
+                        )}
+
+                        {activeTab === "specs" && (
+                          <motion.div
+                            key="specs"
+                            variants={tabVariants}
+                            initial="hidden"
+                            animate="visible"
+                            exit="exit"
+                            transition={{ duration: 0.3 }}
+                            className="absolute top-0 left-0 w-full"
+                          >
+                            <h3 className="text-lg font-bold mb-4 text-white">
+                              Technical Specifications
+                            </h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              {Object.entries(selectedProduct.specs).map(
+                                ([key, value]) => (
+                                  <div
+                                    key={key}
+                                    className="bg-slate-800 rounded-lg p-4"
+                                  >
+                                    <p className="text-xs text-slate-400 uppercase font-medium mb-1">
+                                      {key.charAt(0).toUpperCase() +
+                                        key.slice(1)}
+                                    </p>
+                                    <p className="text-base text-white font-medium">
+                                      {value as string}
+                                    </p>
+                                  </div>
+                                )
+                              )}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+
+                    <div className="flex mt-16">
+                      <button className="flex-1 bg-teal-500 hover:bg-teal-600 text-white font-medium py-3 rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-teal-500/20 mr-4">
+                        Add to Cart
+                      </button>
+                      <button className="bg-slate-800 hover:bg-slate-700 text-white font-medium py-3 px-6 rounded-lg transition-all duration-300 flex items-center justify-center">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-5 w-5 mr-2"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                          />
+                        </svg>
+                        Save
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {showNewsletterModal && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4"
+              onClick={closeNewsletterModal}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="bg-slate-900 rounded-xl max-w-md w-full p-8 shadow-2xl relative"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-teal-400 to-purple-500"></div>
+
+                <h2 className="text-2xl font-bold mb-4 text-white">
+                  Subscribe to Vision Pro
+                </h2>
+                <p className="text-slate-300 mb-6">
+                  Enter your email to stay updated with our latest products,
+                  tutorials, and special offers.
+                </p>
+
+                <div className="mb-6">
+                  <label
+                    htmlFor="email"
+                    className="block text-sm font-medium text-slate-300 mb-1"
+                  >
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="your@email.com"
+                    className="w-full px-4 py-3 rounded-lg bg-slate-800 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all duration-300"
+                  />
+                </div>
+
+                <div className="flex space-x-4">
+                  <button
+                    onClick={handleSubscribe}
+                    className="flex-1 bg-teal-500 hover:bg-teal-600 text-white font-medium py- text-white font-medium py-3 rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-teal-500/20"
+                  >
+                    Subscribe
+                  </button>
+                  <button
+                    onClick={closeNewsletterModal}
+                    className="flex-1 bg-slate-800 hover:bg-slate-700 text-white font-medium py-3 rounded-lg transition-all duration-300"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {showAlert && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+              className="fixed bottom-8 right-8 bg-teal-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 mr-2"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+              <span>Successfully subscribed to our newsletter!</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 };
@@ -898,15 +797,16 @@ const App = () => {
 export default App;
 // Zod Schema
 export const Schema = {
-  commentary: "",
-  template: "nextjs-developer",
-  title: "Fitness Ring App",
-  description:
-    "A responsive app for a wearable fitness ring that surfaces key daily health metrics, activity trends, and quick-access guides.",
-  additional_dependencies: ["lucide-react", "motion", "recharts"],
-  has_additional_dependencies: true,
-  install_dependencies_command: "npm install motion lucide-react recharts",
-  port: 3000,
-  file_path: "app/page.tsx",
-  code: "<see code above>",
-};
+    "commentary": "To create a website that showcases camera products, I will design a layout with a navigation bar, a carousel for featured products, a grid for product listings, and a newsletter signup form. The website will be built using Next.js and Tailwind CSS for styling.",
+    "template": "nextjs-developer",
+    "title": "Camera Showcase",
+    "description": "A website showcasing camera products with feature highlights, a photo gallery, product details, and a newsletter signup.",
+    "additional_dependencies": [
+        "framer-motion"
+    ],
+    "has_additional_dependencies": true,
+    "install_dependencies_command": "npm install framer-motion",
+    "port": 3000,
+    "file_path": "pages/index.tsx",
+    "code": "<see code above>"
+}
